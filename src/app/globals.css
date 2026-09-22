@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background-color: #faf6f0;
+  color: #5c4433;
+  font-family: var(--font-quicksand), system-ui, sans-serif;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visível em tom marrom */
+:where(a, button, input, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #8b6f52;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+@layer components {
+  .card {
+    @apply rounded-card border-2 border-beige bg-white shadow-card;
+  }
+
+  .btn-pill {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-browndark px-6 py-3 font-body font-semibold text-cream shadow-soft transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-beige bg-white px-6 py-3 font-body font-semibold text-browndark transition-transform active:scale-95;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full bg-beige-light px-4 py-1.5 font-body font-semibold text-brownlabel-deep;
+  }
+}
+
+/* Movimento suave e contínuo da estampa de fundo */
+@keyframes bg-drift {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-16px, -12px) rotate(0.6deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+.bg-drift {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bg-drift 22s ease-in-out infinite;
+}
+
+/* Respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
