@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { forwardRef, useImperativeHandle, useState } from "react";
 import BearHead from "@/components/BearHead";
+import Bunting from "@/components/Bunting";
+import Sparkle from "@/components/Sparkle";
 import Countdown from "@/components/Countdown";
 import DecorativeFrame from "@/components/DecorativeFrame";
 import LocalModal from "@/components/modals/LocalModal";
@@ -45,6 +47,16 @@ const item = {
 
 // Composição do título: "Bernardo" entra da esquerda, "ou" com um pequeno
 // scale, "Maria Júlia" da direita — em sequência.
+// Varal: desce do topo com uma molinha.
+const buntingDrop = {
+  hidden: { opacity: 0, y: -40 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 140, damping: 11 },
+  },
+};
+
 const titleGroup = {
   hidden: {},
   show: { transition: { staggerChildren: 0.14, delayChildren: 0.02 } },
@@ -83,6 +95,11 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
           animate={playing ? "show" : "hidden"}
           className="mx-auto flex min-h-[100dvh] w-full max-w-content flex-col items-center gap-6 px-5 py-10 text-center"
         >
+          {/* Varal de bandeirinhas: desce com mola; cada bandeira balança (CSS) */}
+          <motion.div variants={buntingDrop} className="-mb-3 -mt-5 w-full">
+            <Bunting className="mx-auto w-full max-w-[440px]" />
+          </motion.div>
+
           {/* Selo */}
           <motion.div variants={item}>
             <motion.span
@@ -121,8 +138,13 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
           {/* Título — composição: Bernardo (esq) · ou (scale) · Maria Júlia (dir) */}
           <motion.h1
             variants={titleGroup}
-            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
+            className="relative font-display text-4xl leading-tight text-browndark sm:text-5xl"
           >
+            {/* Brilhinhos piscando ao redor dos nomes */}
+            <Sparkle className="-left-5 top-1 h-4 w-4" delay={0.2} />
+            <Sparkle className="-right-4 top-[42%] h-3 w-3" delay={1.1} />
+            <Sparkle className="-right-6 bottom-1 h-2.5 w-2.5" delay={1.8} />
+            <Sparkle className="-right-1 -top-2 h-2.5 w-2.5" delay={0.7} color="#E6C58F" />
             <motion.span variants={fromLeft} className="inline-block">
               {EVENT.babyOptions.a}
             </motion.span>
@@ -320,10 +342,13 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
             </motion.span>
           </motion.button>
 
+          {/* Nuvens com um ursinho que espia quando o fim da página aparece */}
+          <CloudPeek />
+
           {/* Rodapé */}
           <motion.footer
             variants={item}
-            className="mt-4 font-body italic text-sm text-brownlabel"
+            className="-mt-4 font-body italic text-sm text-brownlabel"
           >
             Com amor, mamãe e papai 🤎
           </motion.footer>
@@ -511,5 +536,98 @@ function PeekBearHeart() {
       <ellipse cx="38" cy="92" rx="11" ry="8" fill="#C9A574" />
       <ellipse cx="82" cy="92" rx="11" ry="8" fill="#C9A574" />
     </svg>
+  );
+}
+
+/**
+ * Faixa de nuvens no fim da página: quando entra na tela, um ursinho espia por
+ * trás delas e solta coraçõezinhos que sobem devagar.
+ */
+function CloudPeek() {
+  return (
+    <motion.div
+      aria-hidden="true"
+      className="relative mt-2 h-28 w-full overflow-hidden"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.6 }}
+    >
+      {/* Coraçõezinhos subindo */}
+      {[
+        { left: "38%", delay: 0.6, size: 12, color: "#E8C4CB" },
+        { left: "60%", delay: 1.4, size: 10, color: "#C3D5E3" },
+        { left: "49%", delay: 2.2, size: 11, color: "#D6A96A" },
+      ].map((h, i) => (
+        <motion.svg
+          key={i}
+          viewBox="0 0 24 24"
+          className="absolute bottom-10"
+          style={{ left: h.left, width: h.size, height: h.size }}
+          animate={{ y: [0, -64], opacity: [0, 1, 0], x: [0, i % 2 ? 6 : -6, 0] }}
+          transition={{
+            repeat: Infinity,
+            duration: 2.8,
+            ease: "easeOut",
+            delay: h.delay,
+            repeatDelay: 1.2,
+          }}
+        >
+          <path d={HEART_PATH} fill={h.color} />
+        </motion.svg>
+      ))}
+
+      {/* Ursinho: sobe de trás das nuvens e fica "respirando" */}
+      <motion.div
+        className="absolute bottom-9 left-1/2 -ml-8 w-16"
+        variants={{
+          hidden: { y: 60 },
+          show: {
+            y: 0,
+            transition: { type: "spring", stiffness: 160, damping: 12, delay: 0.2 },
+          },
+        }}
+      >
+        <motion.div
+          animate={{ rotate: [-5, 5, -5] }}
+          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+          style={{ originY: 1 }}
+        >
+          <BearHead size={64} blush title="" className="w-full" />
+        </motion.div>
+      </motion.div>
+
+      {/* Nuvens (duas camadas) */}
+      <svg
+        viewBox="0 0 400 60"
+        preserveAspectRatio="none"
+        className="absolute inset-x-0 bottom-0 h-16 w-full"
+        style={{
+          // Esmaece nas laterais para as nuvens não virarem um "bloco".
+          maskImage:
+            "linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%)",
+        }}
+      >
+        <defs>
+          <linearGradient id="cloud-fade-back" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0.3" stopColor="#F4E8D6" />
+            <stop offset="1" stopColor="#F4E8D6" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="cloud-fade-front" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0.5" stopColor="#FBF5EC" />
+            <stop offset="1" stopColor="#FBF5EC" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M0 60 V34 C18 20 42 20 52 30 C62 12 96 10 108 28 C120 16 146 16 156 30 C168 12 204 10 216 28 C228 16 254 16 264 30 C276 12 312 12 324 30 C336 18 364 18 374 30 C384 22 394 22 400 28 V60 Z"
+          fill="url(#cloud-fade-back)"
+        />
+        <path
+          d="M0 60 V44 C20 32 44 34 56 42 C70 28 102 28 114 42 C126 32 150 32 160 42 C174 28 206 28 218 42 C230 32 254 32 264 42 C278 28 310 28 322 42 C334 32 360 32 372 42 C382 36 394 36 400 40 V60 Z"
+          fill="url(#cloud-fade-front)"
+        />
+      </svg>
+    </motion.div>
   );
 }

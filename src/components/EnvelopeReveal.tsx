@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { gsap, useGSAP, ensureGsap, SplitText } from "@/lib/gsap-plugins";
 import BackgroundPattern from "@/components/BackgroundPattern";
+import Bunting from "@/components/Bunting";
+import Sparkle from "@/components/Sparkle";
 import MainPage, { type MainPageHandle } from "@/components/MainPage";
 
 /**
@@ -83,6 +85,7 @@ export default function EnvelopeReveal() {
   const blueRef = useRef<HTMLDivElement>(null); // balão azul (idle + pop)
   const groundRef = useRef<HTMLDivElement>(null); // nuvens do rodapé
   const peekRef = useRef<HTMLDivElement>(null); // ursinho espiando das nuvens
+  const buntingRef = useRef<HTMLDivElement>(null); // varal de bandeirinhas (topo)
   const introTextRef = useRef<HTMLDivElement>(null); // título acima do envelope
   const titleRef = useRef<HTMLHeadingElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
@@ -165,6 +168,7 @@ export default function EnvelopeReveal() {
       if (reducedRef.current) {
         gsap.set([...envParts, ...introParts], { display: "none" });
         finalize();
+        gsap.set(sceneRef.current, { visibility: "visible" });
         return;
       }
 
@@ -229,6 +233,10 @@ export default function EnvelopeReveal() {
       const ground = groundRef.current;
       const peek = peekRef.current;
       if (!roomy) gsap.set([ground, ...bears], { display: "none" });
+      // O varal só cabe acima do título em telas mais altas.
+      const bunting = buntingRef.current;
+      const tall = vh >= 700;
+      if (!tall) gsap.set(bunting, { display: "none" });
       else buildBearLoops();
 
       const tl = gsap.timeline({ delay: 0.15, onComplete: finalize });
@@ -249,6 +257,29 @@ export default function EnvelopeReveal() {
         },
         0.1
       );
+
+      // 1b. Varal desce do topo e as bandeirinhas "caem" uma a uma, com um
+      //     balanço de mola (o balanço contínuo é CSS, em cada bandeira).
+      if (tall && bunting) {
+        tl.from(
+          bunting,
+          { y: -60, autoAlpha: 0, duration: 0.7, ease: "power3.out" },
+          0.1
+        );
+        tl.from(
+          bunting.querySelectorAll(".flag-drop"),
+          {
+            y: -26,
+            scale: 0.3,
+            autoAlpha: 0,
+            transformOrigin: "50% 0%",
+            duration: 0.7,
+            ease: "back.out(2.6)",
+            stagger: { each: 0.05, from: "center" },
+          },
+          0.35
+        );
+      }
 
       // 2. Título: letras saltam uma a uma (SplitText) + sublinhado desenhado
       //    à mão (DrawSVG).
@@ -443,6 +474,14 @@ export default function EnvelopeReveal() {
       tl.add(() => heroRef.current?.play(), "rise+=0.15");
       tl.add(spawnRiseSparkles, "rise+=0.2");
       tl.add(() => fireConfetti(confettiBase), "rise+=0.5");
+      // Varal sobe e sai pelo topo, abrindo caminho para o papel.
+      if (tall) {
+        tl.to(
+          bunting,
+          { y: -90, autoAlpha: 0, duration: 0.7, ease: "power2.in" },
+          "rise"
+        );
+      }
       // Nuvens (e o ursinho do meio) afundam no rodapé enquanto o papel sobe.
       if (roomy) {
         tl.to(
@@ -492,6 +531,10 @@ export default function EnvelopeReveal() {
       );
       // 6. Segunda rajada de confete (leve) quando a expansão termina
       tl.add(() => fireConfetti(Math.round(confettiBase / 2)), "expand+=0.75");
+
+      // Estados iniciais aplicados → só agora a cena aparece (evita o "flash"
+      // do HTML do servidor com tudo no lugar final antes da hidratação).
+      gsap.set(sceneRef.current, { visibility: "visible" });
 
       // ────────────────────────── helpers ──────────────────────────
 
@@ -1237,7 +1280,11 @@ export default function EnvelopeReveal() {
       {/* Cena (recebe o zoom de câmera; limpo por completo no finalize).
           Sem will-change inline: evita criar bloco de contenção permanente que
           quebraria o position:fixed da página final e a moldura decorativa. */}
-      <div ref={sceneRef} className="absolute inset-0">
+      <div
+        ref={sceneRef}
+        className="absolute inset-0"
+        style={{ visibility: "hidden" }}
+      >
         {/* Fundo ao redor do envelope (mesmo da página) */}
         <BackgroundPattern />
 
@@ -1263,6 +1310,16 @@ export default function EnvelopeReveal() {
           <div ref={blueRef} className="absolute right-[-5%] top-[-58%] w-9 sm:w-11">
             <BalloonSvg palette={BALLOON_BLUE} />
           </div>
+        </div>
+
+        {/* 0b' · Varal de bandeirinhas no topo (desce no início, sobe no fim) */}
+        <div
+          ref={buntingRef}
+          className="intro-part pointer-events-none absolute inset-x-0 top-3 flex justify-center px-4"
+          style={{ zIndex: 1 }}
+          aria-hidden="true"
+        >
+          <Bunting className="w-full max-w-[460px]" />
         </div>
 
         {/* 0c · Rodapé de nuvens com um ursinho espiando (sobe no início,
@@ -1486,6 +1543,9 @@ export default function EnvelopeReveal() {
           style={{ zIndex: 6 }}
         >
           <div className="absolute bottom-full left-1/2 mb-[21%] w-[118%] -translate-x-1/2 text-center">
+            <Sparkle className="left-[4%] top-[38%] h-4 w-4" delay={0} />
+            <Sparkle className="right-[3%] top-[20%] h-3 w-3" delay={0.8} />
+            <Sparkle className="right-[9%] top-[70%] h-2.5 w-2.5" delay={1.5} />
             <p
               ref={kickerRef}
               className="font-body text-[11px] font-semibold uppercase tracking-[0.28em] text-brownlabel"

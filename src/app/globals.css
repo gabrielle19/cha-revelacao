@@ -63,6 +63,40 @@ body {
   animation: bg-drift 22s ease-in-out infinite;
 }
 
+/* Bandeirinhas balançando presas ao varal (pivô no topo de cada bandeira) */
+@keyframes bunting-sway {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+.bunting-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: bunting-sway 2.6s ease-in-out infinite;
+}
+
+/* Brilhinho que "pisca" (estrelas de 4 pontas) */
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+.twinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
 /* Respeita quem prefere menos movimento */
 @media (prefers-reduced-motion: reduce) {
   *,

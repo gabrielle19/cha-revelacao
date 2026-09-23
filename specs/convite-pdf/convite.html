@@ -10,22 +10,16 @@
   rel="stylesheet"
 />
 <style>
-  /* Convite de WhatsApp: página única 1080×1350 (4:5), mesma paleta do site. */
+  /* Convite de WhatsApp: página única 1080×1350 (4:5), mesma paleta do site.
+     O render.js "achata" tudo numa imagem, então sombras/filtros são seguros. */
   :root {
     --cream: #faf6f0;
     --beige: #e8dcc8;
-    --beige-light: #f1e6d6;
     --caramel: #c9a574;
     --label: #b08968;
     --label-deep: #8b6f52;
     --dark: #5c4433;
-    --pink: #e8c4cb;
-    --pink-edge: #d3a2ae;
-    --blue: #c3d5e3;
-    --blue-edge: #a4bdd1;
-    --site: "https://cha-revelacao-knny.onrender.com/";
   }
-  @page { size: 1080px 1350px; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1080px; height: 1350px; }
   body {
@@ -34,107 +28,128 @@
     color: var(--dark);
     font-family: "Quicksand", sans-serif;
     background:
-      radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%),
-      radial-gradient(ellipse 60% 40% at 50% 62%, rgba(240, 214, 160, 0.28), rgba(240, 214, 160, 0) 70%),
-      linear-gradient(180deg, #fbf7f1 0%, #f5ecdf 55%, #ecdfcb 100%);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+      radial-gradient(ellipse 60% 38% at 50% 2%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%),
+      radial-gradient(circle 340px at 6% 72%, rgba(232, 196, 203, 0.24), rgba(232, 196, 203, 0) 70%),
+      radial-gradient(circle 340px at 96% 40%, rgba(195, 213, 227, 0.2), rgba(195, 213, 227, 0) 70%),
+      radial-gradient(ellipse 55% 30% at 50% 70%, rgba(240, 210, 150, 0.35), rgba(240, 210, 150, 0) 70%),
+      linear-gradient(180deg, #fcf8f2 0%, #f6ecde 55%, #eddfc9 100%);
   }
 
-  /* ── Estampa de fundo bem discreta ── */
-  .pattern { position: absolute; inset: 0; pointer-events: none; }
-  .pattern svg { position: absolute; fill: var(--caramel); opacity: 0.16; }
+  /* ── Camadas decorativas ── */
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  .layer svg { position: absolute; }
+  .pattern svg { fill: var(--caramel); opacity: 0.15; }
 
   /* ── Moldura ── */
   .frame {
     position: absolute; inset: 34px;
-    border: 1.5px solid rgba(176, 137, 104, 0.55);
+    border: 1.5px solid rgba(176, 137, 104, 0.6);
     border-radius: 26px;
   }
   .frame::after {
     content: ""; position: absolute; inset: 12px;
-    border: 1px dashed rgba(176, 137, 104, 0.35);
+    border: 1px dashed rgba(176, 137, 104, 0.38);
     border-radius: 18px;
   }
-  .corner { position: absolute; width: 92px; height: 92px; }
+  .corner { position: absolute; width: 96px; height: 96px; }
   .corner.tl { top: 22px; left: 22px; }
   .corner.tr { top: 22px; right: 22px; transform: scaleX(-1); }
   .corner.bl { bottom: 22px; left: 22px; transform: scaleY(-1); }
   .corner.br { bottom: 22px; right: 22px; transform: scale(-1, -1); }
   .diamond {
-    position: absolute; width: 11px; height: 11px; background: var(--caramel);
+    position: absolute; width: 12px; height: 12px; background: var(--caramel);
     transform: translate(-50%, -50%) rotate(45deg);
   }
+
+  /* ── Bandeirinhas ── */
+  .garland { position: absolute; left: 0; top: 40px; width: 1080px; height: 130px; }
+
+  /* ── Nuvens do rodapé (dentro da moldura) ── */
+  .clouds {
+    position: absolute; left: 35px; right: 35px; bottom: 35px; height: 190px;
+    border-radius: 0 0 25px 25px; overflow: hidden;
+  }
+  .clouds svg { position: absolute; left: 0; bottom: 0; width: 100%; }
 
   /* ── Conteúdo ── */
   .content {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center;
-    padding: 104px 110px 0;
+    padding: 150px 100px 0;
     text-align: center;
   }
   .kicker {
     display: flex; align-items: center; gap: 22px;
-    font-weight: 700; font-size: 21px; letter-spacing: 0.42em;
+    font-weight: 700; font-size: 25px; letter-spacing: 0.42em;
     color: var(--label-deep); text-transform: uppercase;
   }
-  .kicker .rule { width: 90px; height: 1px; background: linear-gradient(90deg, transparent, var(--label)); }
+  .kicker .rule { width: 90px; height: 1.5px; background: linear-gradient(90deg, transparent, var(--label)); }
   .kicker .rule.r { background: linear-gradient(-90deg, transparent, var(--label)); }
   .kicker span.t { margin-right: -0.42em; }
 
   h1 {
-    margin-top: 22px;
+    margin-top: 18px;
     font-family: "Fraunces", serif; font-weight: 600;
-    font-size: 80px; line-height: 0.98; letter-spacing: -0.01em;
+    font-size: 96px; line-height: 0.98; letter-spacing: -0.01em;
     color: var(--dark);
+    text-shadow: 0 3px 0 rgba(255, 255, 255, 0.7), 0 10px 26px rgba(92, 68, 51, 0.12);
   }
   h1 .ou {
     display: flex; align-items: center; justify-content: center; gap: 18px;
-    margin: 6px 0 4px;
+    margin: 4px 0 2px;
     font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
-    font-size: 46px; line-height: 1; color: var(--label);
+    font-size: 54px; line-height: 1; color: var(--label);
+    text-shadow: none;
   }
-  h1 .ou i { display: block; width: 60px; height: 1px; background: rgba(176, 137, 104, 0.5); }
+  h1 .ou i { display: block; width: 70px; height: 1.5px; background: rgba(176, 137, 104, 0.5); }
+  h1 .ou svg { width: 16px; height: 16px; }
 
   .date {
     margin-top: 24px;
     display: inline-flex; align-items: center; gap: 18px;
-    padding: 12px 30px;
-    border: 1.5px solid var(--beige); border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
-    font-weight: 600; font-size: 23px; color: var(--label-deep);
+    padding: 14px 36px;
+    border: 2px solid #e6d3b6; border-radius: 999px;
+    background: linear-gradient(180deg, #ffffff, #fbf4ea);
+    box-shadow: 0 10px 24px -14px rgba(92, 68, 51, 0.45);
+    font-weight: 700; font-size: 27px; color: var(--label-deep);
   }
-  .date .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--caramel); }
+  .date .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--caramel); }
 
   .poem {
-    margin-top: 26px; max-width: 760px; text-wrap: balance;
+    margin-top: 22px; max-width: 840px; text-wrap: balance;
     font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
-    font-size: 29px; line-height: 1.4; color: var(--dark);
+    font-size: 34px; line-height: 1.36; color: var(--dark);
   }
-  .poem .sep { display: flex; justify-content: center; margin: 8px 0; }
+  .poem .sep { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 8px 0; }
+  .poem .sep i { width: 40px; height: 1px; background: rgba(176, 137, 104, 0.45); }
 
   /* ── Envelope (link para o site) ── */
   a.open { display: block; color: inherit; text-decoration: none; }
-  .scene { position: relative; width: 620px; height: 440px; margin-top: 22px; }
-  .balloon { position: absolute; width: 74px; }
-  .balloon.pink { left: -46px; top: -14px; transform: rotate(-10deg); }
-  .balloon.blue { right: -42px; top: -30px; transform: rotate(9deg); }
-  .peek { position: absolute; left: 50%; top: 0; width: 110px; margin-left: -55px; }
+  .scene { position: relative; width: 620px; height: 400px; margin-top: 8px; }
+  .peek { position: absolute; left: 50%; top: 0; width: 120px; margin-left: -60px; }
+  .paws { position: absolute; left: 50%; top: 62px; width: 150px; margin-left: -75px; z-index: 3; }
   .envelope {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 360px;
-    border-radius: 12px;
+    position: absolute; left: 0; right: 0; bottom: 0; height: 330px;
+    border-radius: 14px;
     background: linear-gradient(180deg, #dcc6a6 0%, #cfb592 100%);
-    box-shadow: 0 30px 50px -26px rgba(92, 68, 51, 0.55), 0 2px 0 rgba(255, 255, 255, 0.5) inset;
+    box-shadow:
+      0 44px 60px -30px rgba(92, 68, 51, 0.6),
+      0 12px 22px -12px rgba(92, 68, 51, 0.3),
+      0 2px 0 rgba(255, 255, 255, 0.55) inset;
     overflow: hidden;
   }
   .envelope svg.folds { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .seal { position: absolute; left: 50%; top: 200px; width: 250px; height: 250px; margin: -125px 0 0 -125px; overflow: visible; }
-
+  .seal-glow {
+    position: absolute; left: 50%; top: 185px; width: 360px; height: 360px; margin: -180px 0 0 -180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 236, 196, 0.75) 0%, rgba(255, 236, 196, 0) 62%);
+  }
+  .seal { position: absolute; left: 50%; top: 185px; width: 244px; height: 244px; margin: -122px 0 0 -122px; overflow: visible; }
 
   .sign {
-    position: absolute; left: 0; right: 0; bottom: 70px;
-    font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
-    font-size: 27px; color: var(--label-deep);
+    position: absolute; left: 0; right: 0; bottom: 74px;
+    font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 600;
+    font-size: 33px; color: var(--label-deep);
     display: flex; align-items: center; justify-content: center; gap: 10px;
   }
 </style>
@@ -145,6 +160,7 @@
       <symbol id="heart" viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-8.6C1 9.4 3 5.5 6.4 5.5 9 5.5 12 8.4 12 8.4s3-2.9 5.6-2.9C21 5.5 23 9.4 21.5 12.4 19 16.4 12 21 12 21z"/></symbol>
       <symbol id="paw" viewBox="0 0 64 64"><circle cx="20" cy="22" r="6"/><circle cx="44" cy="22" r="6"/><circle cx="12" cy="39" r="6"/><circle cx="52" cy="39" r="6"/><ellipse cx="32" cy="45" rx="14" ry="11"/></symbol>
       <symbol id="bear" viewBox="0 0 120 120"><circle cx="30" cy="34" r="18"/><circle cx="90" cy="34" r="18"/><circle cx="60" cy="66" r="40"/></symbol>
+      <symbol id="sparkle" viewBox="0 0 24 24"><path d="M12 0c.6 6 5.4 10.8 12 11.4C17.4 12 12.6 16.8 12 24c-.6-7.2-5.4-12-12-12.6C6.6 10.8 11.4 6 12 0z"/></symbol>
       <symbol id="sprig" viewBox="0 0 92 92">
         <g fill="none" stroke="#B08968" stroke-width="1.6" stroke-linecap="round">
           <path d="M6 86 V22 Q6 6 22 6 H86" />
@@ -157,11 +173,77 @@
         <circle cx="86" cy="6" r="3" fill="#C9A574" />
         <circle cx="6" cy="86" r="3" fill="#C9A574" />
       </symbol>
+      <!-- Balão sem cordão (44×57) -->
+      <symbol id="balloon-pink" viewBox="0 0 44 58"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#E8C4CB"/><path d="M22 51 L18 57 L26 57 Z" fill="#D3A2AE"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".45"/></symbol>
+      <symbol id="balloon-pink2" viewBox="0 0 44 58"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#F1DADF"/><path d="M22 51 L18 57 L26 57 Z" fill="#D9B3BC"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".5"/></symbol>
+      <symbol id="balloon-blue" viewBox="0 0 44 58"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#C3D5E3"/><path d="M22 51 L18 57 L26 57 Z" fill="#A4BDD1"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".45"/></symbol>
+      <symbol id="balloon-blue2" viewBox="0 0 44 58"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#DCE7F0"/><path d="M22 51 L18 57 L26 57 Z" fill="#AFC5D7"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".5"/></symbol>
+      <symbol id="balloon-cream" viewBox="0 0 44 58"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#F3E4CC"/><path d="M22 51 L18 57 L26 57 Z" fill="#D9C19E"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".55"/></symbol>
+      <!-- Ursinho de corpo inteiro segurando balões (pata em 73,125) -->
+      <symbol id="bear-body" viewBox="0 0 100 200">
+        <g>
+          <ellipse cx="42" cy="186" rx="8" ry="9" fill="#BD9764"/>
+          <ellipse cx="58" cy="186" rx="8" ry="9" fill="#BD9764"/>
+          <ellipse cx="42" cy="190" rx="4.5" ry="3" fill="#8B6F52" opacity=".45"/>
+          <ellipse cx="58" cy="190" rx="4.5" ry="3" fill="#8B6F52" opacity=".45"/>
+        </g>
+        <ellipse cx="50" cy="164" rx="19" ry="20" fill="#C9A574"/>
+        <ellipse cx="50" cy="169" rx="11.5" ry="12.5" fill="#FAF6F0" opacity=".88"/>
+        <path d="M35 156 Q25 164 30 175" fill="none" stroke="#C9A574" stroke-width="10" stroke-linecap="round"/>
+        <path d="M64 154 Q73 144 73 130" fill="none" stroke="#C9A574" stroke-width="10" stroke-linecap="round"/>
+        <circle cx="73" cy="126" r="6" fill="#C9A574"/>
+        <g transform="translate(20 95) scale(0.5)">
+          <circle cx="30" cy="34" r="18" fill="#C9A574"/><circle cx="90" cy="34" r="18" fill="#C9A574"/>
+          <circle cx="30" cy="34" r="9" fill="#8B6F52"/><circle cx="90" cy="34" r="9" fill="#8B6F52"/>
+          <circle cx="60" cy="66" r="40" fill="#C9A574"/>
+          <ellipse cx="60" cy="78" rx="24" ry="19" fill="#FAF6F0"/>
+          <circle cx="33" cy="74" r="7" fill="#E8B9A0" opacity=".8"/><circle cx="87" cy="74" r="7" fill="#E8B9A0" opacity=".8"/>
+          <circle cx="47" cy="60" r="5" fill="#5C4433"/><circle cx="73" cy="60" r="5" fill="#5C4433"/>
+          <circle cx="48.6" cy="58.4" r="1.6" fill="#fff"/><circle cx="74.6" cy="58.4" r="1.6" fill="#fff"/>
+          <ellipse cx="60" cy="72" rx="6" ry="4.5" fill="#5C4433"/>
+          <path d="M60 76 v6 M60 82 c-5 6 -13 6 -16 0 M60 82 c5 6 13 6 16 0" fill="none" stroke="#5C4433" stroke-width="2.4" stroke-linecap="round"/>
+        </g>
+      </symbol>
     </defs>
   </svg>
 
-  <!-- Estampa discreta (ursinhos, patinhas, corações) -->
-  <div class="pattern" id="pattern"></div>
+  <!-- Estampa discreta + brilhos e confetes -->
+  <div class="layer pattern" id="pattern"></div>
+  <div class="layer" id="sparkles"></div>
+
+  <!-- Nuvens do rodapé -->
+  <div class="clouds">
+    <svg viewBox="0 0 1010 190" preserveAspectRatio="none" style="height:190px; filter: drop-shadow(0 -6px 14px rgba(176,137,104,.16))">
+      <path fill="#F5EADA" d="M0 190 V96 C40 60 110 58 140 88 C165 44 250 40 280 84 C310 56 370 58 395 86 C425 46 510 44 540 84 C570 56 630 56 655 86 C685 44 770 44 800 84 C830 58 890 58 915 88 C940 62 985 62 1010 86 V190 Z"/>
+    </svg>
+    <svg viewBox="0 0 1010 150" preserveAspectRatio="none" style="height:150px; filter: drop-shadow(0 -4px 12px rgba(176,137,104,.14))">
+      <path fill="#FCF7EF" d="M0 150 V82 C45 52 105 54 130 78 C160 40 240 40 268 76 C295 52 350 52 372 76 C402 40 480 40 505 74 C532 50 590 50 612 76 C640 40 720 40 748 76 C775 52 830 52 852 78 C880 46 960 46 1010 76 V150 Z"/>
+    </svg>
+  </div>
+
+  <!-- Ursinhos com balões sobre as nuvens -->
+  <svg class="bb" style="position:absolute; left:92px; bottom:88px; width:138px; height:276px; overflow:visible" viewBox="0 0 100 200">
+    <g opacity=".75" fill="none" stroke-width="1.1">
+      <path d="M22 50 Q44 95 73 125" stroke="#D3A2AE"/>
+      <path d="M50 30 Q58 90 73 125" stroke="#D9C19E"/>
+      <path d="M80 52 Q70 96 73 125" stroke="#D9B3BC"/>
+    </g>
+    <use href="#balloon-pink" x="0" y="-8" width="44" height="58"/>
+    <use href="#balloon-cream" x="28" y="-30" width="44" height="58"/>
+    <use href="#balloon-pink2" x="58" y="-6" width="44" height="58"/>
+    <use href="#bear-body" x="0" y="0" width="100" height="200"/>
+  </svg>
+  <svg class="bb" style="position:absolute; right:92px; bottom:88px; width:138px; height:276px; overflow:visible; transform:scaleX(-1)" viewBox="0 0 100 200">
+    <g opacity=".75" fill="none" stroke-width="1.1">
+      <path d="M22 50 Q44 95 73 125" stroke="#A4BDD1"/>
+      <path d="M50 30 Q58 90 73 125" stroke="#D9C19E"/>
+      <path d="M80 52 Q70 96 73 125" stroke="#AFC5D7"/>
+    </g>
+    <use href="#balloon-blue" x="0" y="-8" width="44" height="58"/>
+    <use href="#balloon-cream" x="28" y="-30" width="44" height="58"/>
+    <use href="#balloon-blue2" x="58" y="-6" width="44" height="58"/>
+    <use href="#bear-body" x="0" y="0" width="100" height="200"/>
+  </svg>
 
   <!-- Moldura -->
   <div class="frame"></div>
@@ -169,10 +251,12 @@
   <svg class="corner tr"><use href="#sprig" /></svg>
   <svg class="corner bl"><use href="#sprig" /></svg>
   <svg class="corner br"><use href="#sprig" /></svg>
-  <span class="diamond" style="left:540px;top:35px"></span>
-  <span class="diamond" style="left:540px;top:1315px"></span>
   <span class="diamond" style="left:35px;top:675px"></span>
   <span class="diamond" style="left:1045px;top:675px"></span>
+  <span class="diamond" style="left:540px;top:1315px"></span>
+
+  <!-- Bandeirinhas (duas curvas, laço no centro) -->
+  <svg class="garland" viewBox="0 0 1080 130" id="garland"></svg>
 
   <main class="content">
     <div class="kicker"><span class="rule"></span><span class="t">Chá Revelação</span><span class="rule r"></span></div>
@@ -187,22 +271,19 @@
 
     <div class="poem">
       <p>Um amor impossível de medir, uma espera cheia de sonhos e uma surpresa que ninguém conhece ainda…</p>
-      <div class="sep"><svg width="22" height="22" fill="#B08968"><use href="#heart" /></svg></div>
+      <div class="sep"><i></i><svg width="22" height="22" fill="#C9A574"><use href="#heart" /></svg><i></i></div>
       <p>Chegou a hora de descobrirmos juntos o segredo que o nosso pequeno coração guarda.</p>
     </div>
 
     <a class="open" href="https://cha-revelacao-knny.onrender.com/">
       <div class="scene">
-        <svg class="balloon pink" viewBox="0 0 44 110"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#E8C4CB"/><path d="M22 51 L18 57 L26 57 Z" fill="#D3A2AE"/><path d="M22 57 q6 12 0 24 q-6 12 2 29" fill="none" stroke="#D3A2AE" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".4"/></svg>
-        <svg class="balloon blue" viewBox="0 0 44 110"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#C3D5E3"/><path d="M22 51 L18 57 L26 57 Z" fill="#A4BDD1"/><path d="M22 57 q-6 12 0 24 q6 12 -2 29" fill="none" stroke="#A4BDD1" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".4"/></svg>
-
         <!-- Ursinho espiando por cima do envelope -->
         <svg class="peek" viewBox="0 0 120 100">
           <circle cx="30" cy="30" r="16" fill="#C9A574"/><circle cx="90" cy="30" r="16" fill="#C9A574"/>
           <circle cx="30" cy="30" r="8" fill="#8B6F52"/><circle cx="90" cy="30" r="8" fill="#8B6F52"/>
           <circle cx="60" cy="60" r="36" fill="#C9A574"/>
           <ellipse cx="60" cy="70" rx="20" ry="15" fill="#FAF6F0"/>
-          <circle cx="36" cy="68" r="6" fill="#E8B9A0" opacity=".75"/><circle cx="84" cy="68" r="6" fill="#E8B9A0" opacity=".75"/>
+          <circle cx="36" cy="68" r="6" fill="#E8B9A0" opacity=".8"/><circle cx="84" cy="68" r="6" fill="#E8B9A0" opacity=".8"/>
           <circle cx="48" cy="54" r="4.4" fill="#5C4433"/><circle cx="72" cy="54" r="4.4" fill="#5C4433"/>
           <circle cx="49.4" cy="52.6" r="1.4" fill="#fff"/><circle cx="73.4" cy="52.6" r="1.4" fill="#fff"/>
           <ellipse cx="60" cy="65" rx="5" ry="3.8" fill="#5C4433"/>
@@ -212,29 +293,28 @@
         <div class="envelope">
           <svg class="folds" viewBox="0 0 600 356" preserveAspectRatio="none">
             <defs>
-              <linearGradient id="flap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4D0B1"/><stop offset="1" stop-color="#D6BC96"/></linearGradient>
-              <linearGradient id="pocket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9C19E"/><stop offset="1" stop-color="#CBB08A"/></linearGradient>
+              <linearGradient id="flap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E7D4B6"/><stop offset="1" stop-color="#D6BC96"/></linearGradient>
+              <linearGradient id="pocket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DAC29F"/><stop offset="1" stop-color="#C9AD86"/></linearGradient>
             </defs>
-            <!-- bolso: abas laterais e inferior -->
             <path d="M0 0 L300 196 L600 0 V356 H0 Z" fill="url(#pocket)"/>
             <path d="M0 356 L262 176 M600 356 L338 176" stroke="#A88B66" stroke-opacity=".35" stroke-width="1.5" fill="none"/>
-            <!-- aba superior com leve sombra -->
-            <path d="M0 0 H600 L300 200 Z" fill="rgba(92,68,51,.12)" transform="translate(0 6)"/>
+            <path d="M0 0 H600 L300 200 Z" fill="rgba(92,68,51,.14)" transform="translate(0 7)"/>
             <path d="M0 0 H600 L300 200 Z" fill="url(#flap)"/>
             <path d="M0 0 L300 200 L600 0" stroke="#A88B66" stroke-opacity=".4" stroke-width="1.5" fill="none"/>
           </svg>
 
+          <div class="seal-glow"></div>
+
           <!-- Selo de cera com texto circular -->
           <svg class="seal" viewBox="0 0 208 208">
             <defs>
-              <radialGradient id="wax" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#E2C48F"/><stop offset=".55" stop-color="#C9A06A"/><stop offset="1" stop-color="#8A6440"/></radialGradient>
+              <radialGradient id="wax" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#E6CA96"/><stop offset=".55" stop-color="#C9A06A"/><stop offset="1" stop-color="#8A6440"/></radialGradient>
               <path id="ring" d="M33 104 A71 71 0 0 0 175 104" />
               <filter id="txtShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="#4A3421" flood-opacity=".75"/></filter>
             </defs>
-            <!-- Halo de "toque aqui" ao redor do selo -->
-            <circle cx="104" cy="104" r="112" fill="none" stroke="#FFF8EC" stroke-width="2" opacity=".55"/>
-            <circle cx="104" cy="104" r="124" fill="none" stroke="#FFF8EC" stroke-width="1.5" stroke-dasharray="2 7" stroke-linecap="round" opacity=".6"/>
-            <path id="blob" fill="url(#wax)" style="filter: drop-shadow(0 6px 8px rgba(74,52,33,.35))" />
+            <circle cx="104" cy="104" r="112" fill="none" stroke="#FFF8EC" stroke-width="2" opacity=".6"/>
+            <circle cx="104" cy="104" r="124" fill="none" stroke="#FFF8EC" stroke-width="1.5" stroke-dasharray="2 7" stroke-linecap="round" opacity=".65"/>
+            <path id="blob" fill="url(#wax)" style="filter: drop-shadow(0 7px 9px rgba(74,52,33,.4))" />
             <circle cx="104" cy="104" r="48" fill="none" stroke="#8A6440" stroke-width="2" opacity=".55"/>
             <circle cx="104" cy="104" r="40" fill="#8B6F52"/>
             <circle cx="104" cy="104" r="40" fill="none" stroke="#FAF6F0" stroke-width="1.6" stroke-dasharray="3 4" opacity=".7"/>
@@ -252,18 +332,36 @@
             </text>
           </svg>
         </div>
-      </div>
 
+        <!-- Patinhas do ursinho na borda do envelope -->
+        <svg class="paws" viewBox="0 0 150 30">
+          <ellipse cx="38" cy="14" rx="14" ry="10" fill="#C9A574"/>
+          <ellipse cx="112" cy="14" rx="14" ry="10" fill="#C9A574"/>
+          <path d="M31 18 v4 M38 19 v4 M45 18 v4 M105 18 v4 M112 19 v4 M119 18 v4" stroke="#8B6F52" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
+        </svg>
+      </div>
     </a>
   </main>
 
   <div class="sign">
     com amor, mamãe e papai
-    <svg width="20" height="20" fill="#B08968"><use href="#heart" /></svg>
+    <svg width="24" height="24" fill="#B08968"><use href="#heart" /></svg>
   </div>
 
 <script>
-  // Borda orgânica do selo de cera (ondulada, levemente irregular).
+  let seed = 20261121;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const NS = "http://www.w3.org/2000/svg";
+  const put = (box, x, y, size, href, style = {}) => {
+    const el = document.createElementNS(NS, "svg");
+    el.setAttribute("width", size); el.setAttribute("height", size);
+    Object.assign(el.style, { left: x - size / 2 + "px", top: y - size / 2 + "px", ...style });
+    el.innerHTML = `<use href="#${href}" />`;
+    box.appendChild(el);
+    return el;
+  };
+
+  // Borda orgânica do selo de cera.
   (function () {
     const cx = 104, cy = 104, n = 22, pts = [];
     for (let i = 0; i < n * 2; i++) {
@@ -274,31 +372,72 @@
     let d = "M" + pts[0].join(" ");
     for (let i = 1; i <= pts.length; i++) {
       const p = pts[i % pts.length], q = pts[(i - 1) % pts.length];
-      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
-      d += ` Q${q[0].toFixed(1)} ${q[1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+      d += ` Q${q[0].toFixed(1)} ${q[1].toFixed(1)} ${((p[0] + q[0]) / 2).toFixed(1)} ${((p[1] + q[1]) / 2).toFixed(1)}`;
     }
     document.getElementById("blob").setAttribute("d", d + "Z");
   })();
 
-  // Estampa determinística espalhada pelas laterais (longe do texto).
+  // Bandeirinhas: duas curvas penduradas, bandeiras alternando rosa/creme/azul.
   (function () {
-    let s = 20261121;
-    const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const g = document.getElementById("garland");
+    const colors = ["#E8C4CB", "#F3E4CC", "#C3D5E3", "#E0CBAB"];
+    let html = "";
+    const swag = (x0, x1, y0, sag, offset) => {
+      const q = (t) => {
+        const x = x0 + (x1 - x0) * t;
+        const y = y0 + 4 * sag * t * (1 - t);
+        return [x, y];
+      };
+      html += `<path d="M${x0} ${y0} Q${(x0 + x1) / 2} ${y0 + sag * 2} ${x1} ${y0}" fill="none" stroke="#B08968" stroke-width="1.6" opacity=".7"/>`;
+      const n = 7;
+      for (let i = 1; i <= n; i++) {
+        const t = i / (n + 1);
+        const [x, y] = q(t);
+        const c = colors[(i + offset) % colors.length];
+        const tilt = (t - 0.5) * -24;
+        html += `<g transform="translate(${x} ${y}) rotate(${tilt})"><path d="M-14 0 L14 0 L0 30 Z" fill="${c}"/><path d="M-14 0 L14 0" stroke="rgba(92,68,51,.18)" stroke-width="2"/></g>`;
+      }
+    };
+    swag(120, 540, 22, 30, 0);
+    swag(540, 960, 22, 30, 2);
+    // lacinho no centro
+    html += `<g transform="translate(540 22)"><path d="M0 0 C-14 -12 -26 -4 -22 6 C-18 14 -6 8 0 0 Z M0 0 C14 -12 26 -4 22 6 C18 14 6 8 0 0 Z" fill="#E8C4CB"/><circle r="5" fill="#C9A574"/></g>`;
+    g.innerHTML = html;
+  })();
+
+  // Estampa discreta nas laterais.
+  (function () {
     const box = document.getElementById("pattern");
     const shapes = ["bear", "paw", "heart"];
-    const spots = [
-      [120, 150], [950, 170], [90, 420], [985, 460], [140, 700], [960, 760],
-      [80, 980], [1000, 1010], [170, 1200], [900, 1210], [300, 1265], [770, 1270],
-      [230, 300], [860, 330], [60, 850], [1020, 880],
-    ];
-    spots.forEach(([x, y], i) => {
-      const size = 34 + rnd() * 30;
-      const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      el.setAttribute("width", size); el.setAttribute("height", size);
-      el.style.left = x - size / 2 + "px"; el.style.top = y - size / 2 + "px";
-      el.style.transform = `rotate(${(rnd() - 0.5) * 40}deg)`;
-      el.innerHTML = `<use href="#${shapes[i % 3]}" />`;
-      box.appendChild(el);
+    [
+      [95, 300], [985, 300], [90, 520], [990, 560], [80, 760], [1000, 800],
+      [230, 420], [850, 440],
+    ].forEach(([x, y], i) => put(box, x, y, 34 + rnd() * 28, shapes[i % 3], { transform: `rotate(${(rnd() - 0.5) * 40}deg)` }));
+  })();
+
+  // Brilhos dourados e confetes pastel (vida sem pesar).
+  (function () {
+    const box = document.getElementById("sparkles");
+    [
+      [258, 250, 30], [822, 236, 22], [215, 470, 16], [790, 410, 26],
+      [210, 900, 22], [880, 880, 18], [345, 1060, 16], [735, 1050, 20],
+      [130, 620, 14], [955, 660, 14],
+    ].forEach(([x, y, s]) =>
+      put(box, x, y, s, "sparkle", { fill: rnd() < 0.5 ? "#D6A96A" : "#E6C58F", opacity: 0.85 })
+    );
+    const conf = ["#E8C4CB", "#C3D5E3", "#E0CBAB", "#D6A96A"];
+    [
+      [180, 205], [905, 205], [120, 380], [965, 420], [195, 610], [900, 610],
+      [110, 700], [975, 720], [260, 800], [830, 790], [190, 1030], [890, 1030],
+    ].forEach(([x, y], i) => {
+      const d = document.createElement("span");
+      const s = 7 + rnd() * 6;
+      Object.assign(d.style, {
+        position: "absolute", left: x + "px", top: y + "px", width: s + "px", height: s + "px",
+        borderRadius: i % 3 === 0 ? "2px" : "50%", background: conf[i % conf.length],
+        transform: `rotate(${rnd() * 60}deg)`, opacity: 0.8,
+      });
+      box.appendChild(d);
     });
   })();
 </script>
