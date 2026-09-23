@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap, useGSAP, ensureGsap } from "@/lib/gsap-plugins";
+import { gsap, useGSAP, ensureGsap, SplitText } from "@/lib/gsap-plugins";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import MainPage, { type MainPageHandle } from "@/components/MainPage";
 
@@ -19,8 +19,9 @@ import MainPage, { type MainPageHandle } from "@/components/MainPage";
  * moldura decorativa).
  */
 
-const ENV_BOX =
-  "env-part absolute inset-0 m-auto w-[min(86vw,340px)] h-[calc(min(86vw,340px)*0.656)]";
+const ENV_SIZE =
+  "absolute inset-0 m-auto w-[min(86vw,340px)] h-[calc(min(86vw,340px)*0.656)]";
+const ENV_BOX = "env-part " + ENV_SIZE;
 
 const TIP_X = 160;
 const TIP_Y = 210 * 0.55; // 115.5
@@ -50,6 +51,9 @@ const AMBIENT_SHAPES = [HEART, STAR, MOON, CLOUD];
 // na paleta do site). Tons suaves e sofisticados, nada 3D/neon/saturado.
 const BALLOON_PINK = { body: "#E8C4CB", edge: "#D3A2AE" };
 const BALLOON_BLUE = { body: "#C3D5E3", edge: "#A4BDD1" };
+// Variações mais claras para os buquês que os ursinhos seguram.
+const BALLOON_PINK_SOFT = { body: "#F1DADF", edge: "#D9B3BC" };
+const BALLOON_BLUE_SOFT = { body: "#DCE7F0", edge: "#AFC5D7" };
 // Mistura do "pop": maioria da própria cor + um pouco de creme + um toque da oposta.
 const POP_PINK = ["#E8C4CB", "#E8C4CB", "#EFD6DC", "#FAF6F0", "#C3D5E3"];
 const POP_BLUE = ["#C3D5E3", "#C3D5E3", "#DBE6EF", "#FAF6F0", "#E8C4CB"];
@@ -77,11 +81,18 @@ export default function EnvelopeReveal() {
   const heroRef = useRef<MainPageHandle>(null); // dispara a revelação do hero
   const pinkRef = useRef<HTMLDivElement>(null); // balão rosa (idle + pop)
   const blueRef = useRef<HTMLDivElement>(null); // balão azul (idle + pop)
+  const groundRef = useRef<HTMLDivElement>(null); // nuvens do rodapé
+  const peekRef = useRef<HTMLDivElement>(null); // ursinho espiando das nuvens
+  const introTextRef = useRef<HTMLDivElement>(null); // título acima do envelope
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const kickerRef = useRef<HTMLParagraphElement>(null);
+  const underlineRef = useRef<SVGPathElement>(null);
 
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const loopsRef = useRef<gsap.core.Animation[]>([]);
   const doneRef = useRef(false);
   const reducedRef = useRef(false);
+  const acceleratedRef = useRef(false);
 
   useGSAP(
     () => {
@@ -91,6 +102,12 @@ export default function EnvelopeReveal() {
       const letter = letterRef.current!;
       const envParts = gsap.utils.toArray<HTMLElement>(
         rootRef.current!.querySelectorAll(".env-part")
+      );
+      const introParts = gsap.utils.toArray<HTMLElement>(
+        rootRef.current!.querySelectorAll(".intro-part")
+      );
+      const bears = gsap.utils.toArray<HTMLElement>(
+        rootRef.current!.querySelectorAll(".bb")
       );
 
       const small = window.innerWidth < 400;
@@ -120,7 +137,7 @@ export default function EnvelopeReveal() {
         doneRef.current = true;
         killLoops();
         gsap.set(sceneRef.current, { clearProps: "transform,willChange" });
-        gsap.set(envParts, { display: "none" });
+        gsap.set([...envParts, ...introParts], { display: "none" });
         gsap.set(mask, {
           position: "fixed",
           left: 0,
@@ -146,7 +163,7 @@ export default function EnvelopeReveal() {
       ).matches;
 
       if (reducedRef.current) {
-        gsap.set(envParts, { display: "none" });
+        gsap.set([...envParts, ...introParts], { display: "none" });
         finalize();
         return;
       }
@@ -185,8 +202,11 @@ export default function EnvelopeReveal() {
         autoAlpha: 0,
       });
 
+      // Todas as partes do envelope giram em torno do MESMO centro durante a
+      // entrada e a chacoalhada (senão desalinham); a aba volta a girar pela
+      // borda superior no instante em que o selo racha.
+      gsap.set(envParts, { transformOrigin: "50% 50%" });
       gsap.set(flapRef.current, {
-        transformOrigin: "top center",
         rotateX: 0,
         zIndex: 4,
       });
@@ -204,19 +224,128 @@ export default function EnvelopeReveal() {
       buildTwinkles();
       buildBalloons();
 
+      // Telas muito baixas (celular deitado): sem espaço para rodapé/ursinhos.
+      const roomy = vh >= 560;
+      const ground = groundRef.current;
+      const peek = peekRef.current;
+      if (!roomy) gsap.set([ground, ...bears], { display: "none" });
+      else buildBearLoops();
+
       const tl = gsap.timeline({ delay: 0.15, onComplete: finalize });
       tlRef.current = tl;
 
-      // 1. Envelope + selo entram juntos (rápido e suave)
-      tl.from(envParts, {
-        y: 24,
-        opacity: 0,
-        duration: 0.55,
-        ease: "power2.out",
-      });
+      // 1. Nuvens sobem do rodapé e o envelope "cai" com um balanço macio
+      if (roomy) {
+        tl.from(ground, { yPercent: 100, duration: 1, ease: "power3.out" }, 0);
+      }
+      tl.from(
+        envParts,
+        {
+          y: -46,
+          rotation: -5,
+          opacity: 0,
+          duration: 0.9,
+          ease: "back.out(1.5)",
+        },
+        0.1
+      );
 
-      // Site abriu → o envelope já abre. Só um respiro curtíssimo.
-      tl.addLabel("crack", "+=0.25");
+      // 2. Título: letras saltam uma a uma (SplitText) + sublinhado desenhado
+      //    à mão (DrawSVG).
+      const split = titleRef.current
+        ? SplitText.create(titleRef.current, { type: "words,chars" })
+        : null;
+      tl.from(
+        kickerRef.current,
+        { autoAlpha: 0, y: 8, duration: 0.5, ease: "power2.out" },
+        0.35
+      );
+      if (split) {
+        tl.from(
+          split.chars,
+          {
+            yPercent: 80,
+            autoAlpha: 0,
+            rotation: () => gsap.utils.random(-18, 18),
+            duration: 0.55,
+            ease: "back.out(2.2)",
+            stagger: 0.028,
+          },
+          0.45
+        );
+      }
+      if (underlineRef.current) {
+        tl.fromTo(
+          underlineRef.current,
+          { drawSVG: "0%" },
+          { drawSVG: "100%", duration: 0.8, ease: "power2.inOut" },
+          0.95
+        );
+      }
+
+      // 3. Ursinhos segurando balões sobem flutuando do rodapé (MotionPath),
+      //    fazendo uma curva em "S" até pararem ao lado do envelope.
+      const rise = vh * 0.75;
+      if (roomy) {
+        bears.forEach((b, i) => {
+          const dir = i === 0 ? 1 : -1;
+          gsap.set(b, { x: -30 * dir, y: rise });
+          tl.to(
+            b,
+            {
+              motionPath: {
+                path: [
+                  { x: 22 * dir, y: rise * 0.55 },
+                  { x: -10 * dir, y: rise * 0.2 },
+                  { x: 0, y: 0 },
+                ],
+                curviness: 1.25,
+              },
+              duration: 2,
+              ease: "sine.out",
+            },
+            0.35 + i * 0.3
+          );
+        });
+        // Ursinho do meio espia por trás das nuvens.
+        tl.fromTo(
+          peek,
+          { yPercent: 75 },
+          { yPercent: 0, duration: 0.6, ease: "back.out(2.4)" },
+          1.35
+        );
+      }
+
+      // 4. Antecipação: o envelope chacoalha (CustomWiggle) e o selo "pulsa"
+      tl.addLabel("wiggle", 2.7);
+      tl.add(() => {
+        gsap.killTweensOf(tl);
+        tl.timeScale(1);
+      }, "wiggle");
+      tl.to(
+        introTextRef.current,
+        { autoAlpha: 0, y: -6, duration: 0.35, ease: "power1.in" },
+        "wiggle"
+      );
+      tl.to(
+        envParts,
+        { rotation: 3, duration: 0.7, ease: "envWiggle" },
+        "wiggle"
+      );
+      tl.to(
+        sealRef.current,
+        {
+          scale: 1.12,
+          duration: 0.16,
+          ease: "power2.out",
+          yoyo: true,
+          repeat: 1,
+        },
+        "wiggle+=0.5"
+      );
+
+      tl.addLabel("crack", "wiggle+=0.78");
+      tl.set(flapRef.current, { transformOrigin: "50% 0%" }, "crack");
 
       // 2. Selo RACHA (Morph), flash suave, estilhaços com física, vibração leve
       if (crackRef.current) {
@@ -260,49 +389,243 @@ export default function EnvelopeReveal() {
       tl.add(() => popBalloon(pinkRef.current, POP_PINK), "flap+=0.15");
       tl.add(() => popBalloon(blueRef.current, POP_BLUE), "flap+=0.32");
 
+      // 3c. Ursinhos comemoram: o do meio dá um pulinho e os dos balões são
+      //     levados para o alto, passando por trás do envelope/papel.
+      if (roomy) {
+        tl.to(
+          peek,
+          {
+            yPercent: -18,
+            duration: 0.22,
+            ease: "power2.out",
+            yoyo: true,
+            repeat: 1,
+          },
+          "flap"
+        );
+        bears.forEach((b, i) => {
+          const dir = i === 0 ? 1 : -1;
+          tl.to(
+            b,
+            {
+              motionPath: {
+                path: [
+                  { x: 14 * dir, y: -vh * 0.4 },
+                  { x: -8 * dir, y: -vh * 0.8 },
+                  { x: 12 * dir, y: -vh * 1.25 },
+                ],
+                curviness: 1.2,
+              },
+              duration: 1.7,
+              ease: "power1.in",
+            },
+            `flap+=${0.05 + i * 0.12}`
+          );
+        });
+      }
+
       // 4. Papel sobe "desenrolando" (rotateX → 0), sem tingir a cor
       tl.addLabel("rise", "flap+=0.5");
       tl.set(letter, { autoAlpha: 1 }, "rise");
+      //    Sobe com calma e um leve inclinar (como puxado à mão), já com o
+      //    conteúdo aparecendo: nada de papel "em branco" na tela.
       tl.to(
         letter,
-        { y: yRise, rotateX: 0, duration: 0.8, ease: "paperRise" },
+        {
+          y: yRise,
+          rotateX: 0,
+          rotation: -1.2,
+          duration: 1.15,
+          ease: "paperRise",
+        },
         "rise"
       );
-      tl.add(() => fireConfetti(confettiBase), "rise+=0.45");
+      tl.add(() => heroRef.current?.play(), "rise+=0.15");
+      tl.add(spawnRiseSparkles, "rise+=0.2");
+      tl.add(() => fireConfetti(confettiBase), "rise+=0.5");
+      // Nuvens (e o ursinho do meio) afundam no rodapé enquanto o papel sobe.
+      if (roomy) {
+        tl.to(
+          ground,
+          { yPercent: 100, autoAlpha: 0, duration: 0.8, ease: "power2.in" },
+          "rise+=0.1"
+        );
+      }
 
       // 5. Expansão: o papel "infla" suavemente até a tela cheia enquanto o
       //    envelope recua e some com delicadeza. Câmera volta ao normal em
       //    sincronia, para uma renderização macia (sem "pulo" nem pressa).
-      tl.addLabel("expand", "rise+=0.72");
+      //    Um respiro com o papel para fora (dá para ler o topo do convite)
+      //    antes de crescer.
+      tl.addLabel("expand", "rise+=1.05");
       tl.set(mask, { overflow: "visible", zIndex: 10 }, "expand");
       tl.to(
         sceneRef.current,
-        { scale: 1, duration: 0.95, ease: "sine.inOut" },
+        { scale: 1, duration: 1.2, ease: "sine.inOut" },
         "expand"
       );
-      // Envelope recua atrás do papel (some no lugar, sem voar).
+      // Envelope escorrega para baixo e sai de cena, girando de leve.
       tl.to(
         envParts,
-        { y: 46, autoAlpha: 0, duration: 0.5, ease: "power2.in" },
+        {
+          y: vh * 0.4,
+          rotation: 5,
+          autoAlpha: 0,
+          duration: 0.85,
+          ease: "power2.in",
+        },
         "expand"
       );
-      // Papel cresce com uma curva macia (power3.inOut assenta suave no fim).
+      // Papel cresce com uma curva longa e macia, desfazendo a inclinação.
       tl.to(
         letter,
         {
           scale: 1,
           y: yFinal,
           rotateX: 0,
+          rotation: 0,
           borderRadius: 0,
-          duration: 0.95,
+          duration: 1.2,
           ease: "power3.inOut",
         },
         "expand"
       );
       // 6. Segunda rajada de confete (leve) quando a expansão termina
-      tl.add(() => fireConfetti(Math.round(confettiBase / 2)), "expand+=0.55");
+      tl.add(() => fireConfetti(Math.round(confettiBase / 2)), "expand+=0.75");
 
       // ────────────────────────── helpers ──────────────────────────
+
+      // Brilhinhos que "escapam" da boca do envelope junto com o papel.
+      function spawnRiseSparkles() {
+        const box = dustRef.current;
+        if (!box || doneRef.current) return;
+        const n = small ? 6 : 9;
+        for (let i = 0; i < n; i++) {
+          const size = gsap.utils.random(8, 13);
+          const el = document.createElement("span");
+          Object.assign(el.style, {
+            position: "absolute",
+            left: `${gsap.utils.random(env.left + 12, env.right - 12)}px`,
+            top: `${env.top + gsap.utils.random(-6, 10)}px`,
+            marginLeft: `${-size / 2}px`,
+            pointerEvents: "none",
+          } as Partial<CSSStyleDeclaration>);
+          el.innerHTML = SPARKLE(i % 3 === 0 ? "#C9A574" : "#FBEFD2", size);
+          box.appendChild(el);
+          gsap
+            .timeline({ delay: i * 0.06, onComplete: () => el.remove() })
+            .fromTo(
+              el,
+              { scale: 0, autoAlpha: 0, rotation: 0 },
+              {
+                scale: 1,
+                autoAlpha: 1,
+                rotation: 90,
+                duration: 0.35,
+                ease: "back.out(2)",
+              }
+            )
+            .to(
+              el,
+              {
+                y: gsap.utils.random(-90, -40),
+                x: gsap.utils.random(-18, 18),
+                autoAlpha: 0,
+                rotation: 180,
+                duration: gsap.utils.random(0.8, 1.2),
+                ease: "power1.out",
+              },
+              ">-0.1"
+            );
+        }
+      }
+
+      // Vida própria dos ursinhos: flutuam, balões balançam presos à patinha,
+      // perninhas balançam e os olhos piscam de vez em quando.
+      function buildBearLoops() {
+        const add = (t: gsap.core.Animation) => loopsRef.current.push(t);
+        bears.forEach((b, i) => {
+          const bob = b.querySelector(".bb-bob");
+          const balloons = b.querySelector(".bb-balloons");
+          const legs = b.querySelector(".bb-legs");
+          add(
+            gsap.to(bob, {
+              y: -8,
+              rotation: i === 0 ? 3 : -3,
+              duration: 2.2 + i * 0.4,
+              ease: "sine.inOut",
+              repeat: -1,
+              yoyo: true,
+            })
+          );
+          add(
+            gsap.fromTo(
+              balloons,
+              { rotation: -5, svgOrigin: "73 125" },
+              {
+                rotation: 5,
+                svgOrigin: "73 125",
+                duration: 1.8 + i * 0.3,
+                ease: "sine.inOut",
+                repeat: -1,
+                yoyo: true,
+              }
+            )
+          );
+          add(
+            gsap.fromTo(
+              legs,
+              { rotation: -7, svgOrigin: "50 176" },
+              {
+                rotation: 7,
+                svgOrigin: "50 176",
+                duration: 0.9 + i * 0.15,
+                ease: "sine.inOut",
+                repeat: -1,
+                yoyo: true,
+              }
+            )
+          );
+        });
+
+        const peek = peekRef.current;
+        if (peek) {
+          add(
+            gsap.fromTo(
+              peek.querySelector(".pk-head"),
+              { rotation: -6, svgOrigin: "60 100" },
+              {
+                rotation: 6,
+                svgOrigin: "60 100",
+                duration: 1.4,
+                ease: "sine.inOut",
+                repeat: -1,
+                yoyo: true,
+              }
+            )
+          );
+        }
+
+        // Piscadinha (ursinhos da cena, não o do selo).
+        const eyes = [...bears, peek]
+          .filter(Boolean)
+          .flatMap((el) => Array.from(el!.querySelectorAll(".bh-eyes")));
+        eyes.forEach((e, i) => {
+          add(
+            gsap.to(e, {
+              scaleY: 0.1,
+              transformOrigin: "50% 50%",
+              duration: 0.08,
+              ease: "power1.in",
+              yoyo: true,
+              repeat: -1,
+              repeatDelay: 2.4 + i * 0.7,
+              delay: 1 + i * 0.5,
+            })
+          );
+        });
+      }
+
 
       function startGlow() {
         const glow = glowRef.current;
@@ -889,16 +1212,27 @@ export default function EnvelopeReveal() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Toque durante a apresentação → acelera até a chacoalhada e abre (sem
+  // "teletransportar" os ursinhos). Toque depois que abriu → pula tudo.
   function handleSkip() {
-    if (doneRef.current || !tlRef.current) return;
-    tlRef.current.progress(1);
+    const tl = tlRef.current;
+    if (doneRef.current || !tl) return;
+    const wiggle = tl.labels.wiggle;
+    if (wiggle !== undefined && tl.time() < wiggle) {
+      if (!acceleratedRef.current) {
+        acceleratedRef.current = true;
+        gsap.to(tl, { timeScale: 4, duration: 0.25, ease: "power1.in" });
+      }
+      return;
+    }
+    tl.progress(1);
   }
 
   return (
     <div
       ref={rootRef}
       onClick={handleSkip}
-      className="fixed inset-0 z-30 overflow-hidden"
+      className="fixed inset-0 z-30 cursor-pointer overflow-hidden"
     >
       {/* Cena (recebe o zoom de câmera; limpo por completo no finalize).
           Sem will-change inline: evita criar bloco de contenção permanente que
@@ -930,6 +1264,54 @@ export default function EnvelopeReveal() {
             <BalloonSvg palette={BALLOON_BLUE} />
           </div>
         </div>
+
+        {/* 0c · Rodapé de nuvens com um ursinho espiando (sobe no início,
+            afunda quando o papel sai). */}
+        <div
+          ref={groundRef}
+          className="intro-part pointer-events-none absolute inset-x-0 bottom-0 h-[min(20vh,150px)]"
+          style={{ zIndex: 1 }}
+          aria-hidden="true"
+        >
+          <CloudBank
+            fill="#F4E8D6"
+            d="M0 100 V52 C20 28 55 28 70 46 C82 20 125 16 140 42 C155 24 190 26 200 44 C215 18 260 18 272 42 C285 26 320 28 330 46 C345 24 385 28 400 48 V100 Z"
+          />
+          <div
+            ref={peekRef}
+            className="absolute bottom-[34%] left-1/2 w-[min(18vw,74px)] -ml-[min(9vw,37px)]"
+          >
+            <PeekBearSvg />
+          </div>
+          <CloudBank
+            fill="#FBF5EC"
+            d="M0 100 V68 C25 48 60 50 75 64 C92 44 130 44 145 62 C165 48 190 50 200 60 C212 46 245 44 262 62 C280 48 315 48 328 64 C345 50 380 50 400 66 V100 Z"
+          />
+        </div>
+
+        {/* 0d · Ursinhos segurando balões, flanqueando o envelope (atrás dele).
+            Posição relativa ao centro: colados ao envelope em qualquer largura. */}
+        {[
+          { side: "left", palettes: [BALLOON_PINK, BALLOON_PINK_SOFT] },
+          { side: "right", palettes: [BALLOON_BLUE, BALLOON_BLUE_SOFT] },
+        ].map(({ side, palettes }) => (
+          <div
+            key={side}
+            className="bb intro-part pointer-events-none absolute bottom-[calc(min(20vh,150px)*0.32)] w-[min(21vw,92px)]"
+            style={{
+              [side]: "calc(50% - min(49vw, 250px))",
+              zIndex: 1,
+            }}
+            aria-hidden="true"
+          >
+            <div className="bb-bob">
+              <BalloonBearSvg
+                palettes={palettes as [typeof BALLOON_PINK, typeof BALLOON_PINK]}
+                mirrored={side === "right"}
+              />
+            </div>
+          </div>
+        ))}
 
         {/* 1 · Fundo/interior do envelope */}
         <div
@@ -1096,6 +1478,42 @@ export default function EnvelopeReveal() {
           style={{ zIndex: 6 }}
           aria-hidden="true"
         />
+
+        {/* 7 · Título acima do envelope (some na chacoalhada) */}
+        <div
+          ref={introTextRef}
+          className={"intro-part pointer-events-none " + ENV_SIZE}
+          style={{ zIndex: 6 }}
+        >
+          <div className="absolute bottom-full left-1/2 mb-[21%] w-[118%] -translate-x-1/2 text-center">
+            <p
+              ref={kickerRef}
+              className="font-body text-[11px] font-semibold uppercase tracking-[0.28em] text-brownlabel"
+            >
+              ✦ chegou pra você ✦
+            </p>
+            <h2
+              ref={titleRef}
+              className="mt-1 font-display text-[26px] leading-tight text-browndark sm:text-3xl"
+            >
+              Um convite especial
+            </h2>
+            <svg
+              viewBox="0 0 200 14"
+              className="mx-auto mt-1 w-[58%]"
+              aria-hidden="true"
+            >
+              <path
+                ref={underlineRef}
+                d="M4 9 C30 3 50 12 76 7 S122 3 146 8 S182 11 196 5"
+                fill="none"
+                stroke="#C9A574"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Camadas de efeito em espaço de tela (fora do zoom) */}
@@ -1141,8 +1559,126 @@ function BalloonSvg({ palette }: { palette: { body: string; edge: string } }) {
   );
 }
 
+type BalloonPalette = { body: string; edge: string };
+
+/** Corpo de balão sem cordão (o cordão é desenhado até a patinha do urso). */
+function BalloonBody({ palette }: { palette: BalloonPalette }) {
+  return (
+    <>
+      <path
+        d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z"
+        fill={palette.body}
+      />
+      <path d="M22 51 L18 57 L26 57 Z" fill={palette.edge} />
+      <ellipse cx="15" cy="17" rx="4" ry="7" fill="#FFFFFF" opacity="0.35" />
+    </>
+  );
+}
+
+/**
+ * Ursinho de corpo inteiro sendo levado por dois balões, segurando os cordões
+ * com a patinha erguida (pivô do balanço em 73,125; quadril em 50,176).
+ */
+function BalloonBearSvg({
+  palettes,
+  mirrored,
+}: {
+  palettes: [BalloonPalette, BalloonPalette];
+  mirrored?: boolean;
+}) {
+  const [a, b] = palettes;
+  const fur = "#C9A574";
+  return (
+    <svg
+      viewBox="0 0 100 200"
+      className="w-full overflow-visible"
+      style={mirrored ? { transform: "scaleX(-1)" } : undefined}
+      aria-hidden="true"
+    >
+      <g className="bb-balloons">
+        <path
+          d="M28 57 Q46 96 73 125"
+          fill="none"
+          stroke={a.edge}
+          strokeWidth="1.2"
+          opacity="0.7"
+        />
+        <path
+          d="M67 54 Q62 94 73 125"
+          fill="none"
+          stroke={b.edge}
+          strokeWidth="1.2"
+          opacity="0.7"
+        />
+        <g transform="translate(8 6) scale(0.9)">
+          <BalloonBody palette={a} />
+        </g>
+        <g transform="translate(46 0) scale(0.95)">
+          <BalloonBody palette={b} />
+        </g>
+      </g>
+      <g className="bb-legs">
+        <ellipse cx="42" cy="184" rx="7" ry="9" fill="#BD9764" />
+        <ellipse cx="58" cy="184" rx="7" ry="9" fill="#BD9764" />
+        <ellipse cx="42" cy="189" rx="4" ry="3" fill="#8B6F52" opacity="0.45" />
+        <ellipse cx="58" cy="189" rx="4" ry="3" fill="#8B6F52" opacity="0.45" />
+      </g>
+      <ellipse cx="50" cy="163" rx="18" ry="19" fill={fur} />
+      <ellipse cx="50" cy="168" rx="11" ry="12" fill="#FAF6F0" opacity="0.85" />
+      <path
+        d="M36 155 Q26 163 31 173"
+        fill="none"
+        stroke={fur}
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+      <path
+        d="M63 153 Q72 143 73 129"
+        fill="none"
+        stroke={fur}
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+      <circle cx="73" cy="126" r="5.5" fill={fur} />
+      <g transform="translate(20 95) scale(0.5)">
+        <BearHeadInline blush />
+      </g>
+    </svg>
+  );
+}
+
+/** Ursinho espiando por cima das nuvens (cabeça + patinhas na borda). */
+function PeekBearSvg() {
+  return (
+    <svg viewBox="0 0 120 112" className="w-full overflow-visible" aria-hidden="true">
+      <g className="pk-head">
+        <BearHeadInline blush />
+      </g>
+      <ellipse cx="24" cy="102" rx="12" ry="9" fill="#C9A574" />
+      <ellipse cx="96" cy="102" rx="12" ry="9" fill="#C9A574" />
+      <ellipse cx="24" cy="104" rx="6" ry="4" fill="#8B6F52" opacity="0.4" />
+      <ellipse cx="96" cy="104" rx="6" ry="4" fill="#8B6F52" opacity="0.4" />
+    </svg>
+  );
+}
+
+/** Faixa de nuvens do rodapé (esticada na largura da tela). */
+function CloudBank({ d, fill }: { d: string; fill: string }) {
+  return (
+    <svg
+      viewBox="0 0 400 100"
+      preserveAspectRatio="none"
+      className="absolute inset-0 h-full w-full"
+      style={{ filter: "drop-shadow(0 -4px 10px rgba(176,137,104,0.12))" }}
+      aria-hidden="true"
+    >
+      <path d={d} fill={fill} />
+    </svg>
+  );
+}
+
 /** Cabeça de urso desenhada em SVG (mesmas cores do BearHead). */
-function BearHeadInline() {
+function BearHeadInline({ blush = false }: { blush?: boolean }) {
   return (
     <g>
       <circle cx="30" cy="34" r="18" fill="#C9A574" />
@@ -1151,10 +1687,18 @@ function BearHeadInline() {
       <circle cx="90" cy="34" r="9" fill="#8B6F52" />
       <circle cx="60" cy="66" r="40" fill="#C9A574" />
       <ellipse cx="60" cy="78" rx="24" ry="19" fill="#FAF6F0" />
-      <circle cx="47" cy="60" r="5" fill="#5C4433" />
-      <circle cx="73" cy="60" r="5" fill="#5C4433" />
-      <circle cx="48.6" cy="58.4" r="1.6" fill="#FFFFFF" />
-      <circle cx="74.6" cy="58.4" r="1.6" fill="#FFFFFF" />
+      {blush && (
+        <>
+          <circle cx="33" cy="74" r="7" fill="#E8B9A0" opacity="0.75" />
+          <circle cx="87" cy="74" r="7" fill="#E8B9A0" opacity="0.75" />
+        </>
+      )}
+      <g className="bh-eyes">
+        <circle cx="47" cy="60" r="5" fill="#5C4433" />
+        <circle cx="73" cy="60" r="5" fill="#5C4433" />
+        <circle cx="48.6" cy="58.4" r="1.6" fill="#FFFFFF" />
+        <circle cx="74.6" cy="58.4" r="1.6" fill="#FFFFFF" />
+      </g>
       <ellipse cx="60" cy="72" rx="6" ry="4.5" fill="#5C4433" />
       <path
         d="M60 76 v6 M60 82 c-5 6 -13 6 -16 0 M60 82 c5 6 13 6 16 0"

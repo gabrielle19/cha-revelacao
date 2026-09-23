@@ -1,7 +1,14 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
-import { MapPin, Shirt, Gift, HeartHandshake, Mail } from "lucide-react";
+import {
+  MapPin,
+  Shirt,
+  Gift,
+  HeartHandshake,
+  Mail,
+  ChevronRight,
+} from "lucide-react";
 import { forwardRef, useImperativeHandle, useState } from "react";
 import BearHead from "@/components/BearHead";
 import Countdown from "@/components/Countdown";
@@ -87,13 +94,27 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
             </motion.span>
           </motion.div>
 
-          {/* Ursinho flutuante — entrada (item) separada da flutuação contínua */}
+          {/* Ursinho flutuante — entrada (item) separada da flutuação contínua.
+              Segura um balão rosa e um azul: a dúvida do chá, de um jeito fofo. */}
           <motion.div variants={item}>
             <motion.div
+              className="relative"
               animate={{ y: [0, -8, 0] }}
               transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
             >
-              <BearHead size={120} blush />
+              <HeroBalloon
+                color={BALLOON_PINK}
+                className="-left-9 -top-7"
+                tilt={-14}
+                delay={0}
+              />
+              <HeroBalloon
+                color={BALLOON_BLUE}
+                className="-right-9 -top-10"
+                tilt={14}
+                delay={0.6}
+              />
+              <BearHead size={120} blush className="relative" />
             </motion.div>
           </motion.div>
 
@@ -161,23 +182,46 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
             </motion.div>
           </motion.div>
 
-          {/* Texto na voz do bebê */}
-          <motion.p
-            variants={item}
-            className="font-body italic leading-relaxed text-browndark"
-          >
-            Antes mesmo de chegar, já existe muito amor esperando por mim. Ter você
-            pertinho vai deixar esse momento ainda mais especial 🤎
-          </motion.p>
+          {/* Cartinha na voz do bebê, com um ursinho espiando por cima */}
+          <motion.div variants={item} className="relative w-full pt-9">
+            <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
+              <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+              >
+                <PeekBearHeart />
+              </motion.div>
+            </div>
+            <div className="relative w-full rounded-card border-2 border-beige bg-cream-soft px-6 pb-5 pt-10 shadow-card">
+              {/* Borda pontilhada interna: papel de carta */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-2 rounded-[16px] border border-dashed border-beige"
+              />
+              <p className="relative font-body text-[17px] italic leading-relaxed text-browndark">
+                Antes mesmo de chegar, já existe muito amor esperando por mim.
+                Ter você pertinho vai deixar esse momento ainda mais especial 🤎
+              </p>
+              
+            </div>
+          </motion.div>
 
           {/* Chamada para os detalhes */}
-          <motion.p
+          <motion.div
             variants={item}
-            className="mt-4 font-body italic text-md leading-relaxed text-brownmid"
+            className="mt-3 flex w-full flex-col items-center gap-2"
           >
-            Toque nos ícones abaixo para conferir todos os detalhes e confirmar sua
-            presença. 🤎
-          </motion.p>
+            <div className="flex w-full items-center gap-3">
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent to-beige" />
+              <span className="font-body text-xs font-semibold uppercase tracking-[0.25em] text-brownlabel">
+                Detalhes do grande dia
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-l from-transparent to-beige" />
+            </div>
+            <p className="font-body text-sm leading-relaxed text-brownmid">
+              Toque nos cartões para ver os detalhes e confirmar sua presença
+            </p>
+          </motion.div>
 
           {/* Grade de botões */}
           <motion.div
@@ -216,22 +260,64 @@ const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
             variants={item}
             type="button"
             onClick={() => setModal("recado")}
-            whileHover={{ scale: 1.02, y: -2 }}
+            whileHover="hover"
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 24 }}
-            className="flex w-full items-center gap-4 rounded-card border-2 border-beige bg-white p-4 text-left shadow-card"
+            className="group relative flex w-full items-center gap-4 overflow-hidden rounded-card border-2 border-beige bg-gradient-to-br from-white to-beige-light/60 p-4 text-left shadow-card"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-beige-light text-caramel">
+            {/* Coração grande e discreto ao fundo */}
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-4 -right-3 h-24 w-24 -rotate-12 text-beige/70"
+            >
+              <path d={HEART_PATH} fill="currentColor" />
+            </svg>
+
+            {/* Envelope com coraçõezinhos saindo de tempos em tempos */}
+            <motion.span
+              variants={{ hidden: { rotate: 0 }, show: { rotate: 0 }, hover: { rotate: -10 } }}
+              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-beige-light text-caramel"
+            >
               <Mail size={26} strokeWidth={2} />
-            </span>
-            <span>
-              <span className="block font-body font-semibold text-md leading-tight text-browndark">
-                Deixe um recadinho para o bebê 💌
+              {[0, 1].map((i) => (
+                <motion.svg
+                  key={i}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 top-1 h-3 w-3 text-caramel"
+                  style={{ marginLeft: i === 0 ? -8 : 2 }}
+                  animate={{ y: [4, -16], opacity: [0, 1, 0], scale: [0.6, 1, 0.8] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1.6,
+                    ease: "easeOut",
+                    delay: 0.8 + i * 0.45,
+                    repeatDelay: 1.4,
+                  }}
+                >
+                  <path d={HEART_PATH} fill="currentColor" />
+                </motion.svg>
+              ))}
+            </motion.span>
+
+            <span className="relative flex-1">
+              <span className="block font-display text-[17px] leading-tight text-browndark">
+                Deixe um recadinho para o bebê
               </span>
-              <span className="mt-0.5 block font-body text-sm text-brownlabel">
-                Uma mensagem de carinho que vamos guardar para sempre
+              <span className="mt-1 block font-body text-sm leading-snug text-brownlabel">
+                Escreva uma mensagem de carinho. Vamos guardar cada palavra para
+                sempre 💌
               </span>
             </span>
+
+            {/* Seta convidando ao toque */}
+            <motion.span
+              variants={{ hidden: { x: 0 }, show: { x: 0 }, hover: { x: 4 } }}
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-browndark text-cream"
+            >
+              <ChevronRight size={18} strokeWidth={2.5} />
+            </motion.span>
           </motion.button>
 
           {/* Rodapé */}
@@ -326,5 +412,104 @@ function ActionCard({
         </span>
       </motion.button>
     </motion.div>
+  );
+}
+
+const HEART_PATH =
+  "M12 21s-7-4.6-9.5-8.6C1 9.4 3 5.5 6.4 5.5 9 5.5 12 8.4 12 8.4s3-2.9 5.6-2.9C21 5.5 23 9.4 21.5 12.4 19 16.4 12 21 12 21z";
+
+// Mesmos tons pastel dos balões do fundo (BalloonBackground).
+const BALLOON_PINK = { body: "#E8C4CB", edge: "#D3A2AE" };
+const BALLOON_BLUE = { body: "#C3D5E3", edge: "#A4BDD1" };
+
+/** Balão preso atrás do ursinho do topo, balançando pelo cordão. */
+function HeroBalloon({
+  color,
+  className,
+  tilt,
+  delay,
+}: {
+  color: { body: string; edge: string };
+  className: string;
+  tilt: number;
+  delay: number;
+}) {
+  return (
+    <motion.span
+      aria-hidden="true"
+      className={"absolute block w-9 " + className}
+      style={{ originX: 0.5, originY: 1 }}
+      animate={{ rotate: [tilt - 5, tilt + 5] }}
+      transition={{
+        repeat: Infinity,
+        repeatType: "mirror",
+        duration: 2.6,
+        ease: "easeInOut",
+        delay,
+      }}
+    >
+      <svg viewBox="0 0 44 96" className="w-full">
+        <path
+          d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z"
+          fill={color.body}
+        />
+        <path d="M22 51 L18 57 L26 57 Z" fill={color.edge} />
+        <path
+          d="M22 57 q5 9 0 19 q-5 10 0 20"
+          fill="none"
+          stroke={color.edge}
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <ellipse cx="15" cy="17" rx="4" ry="7" fill="#FFFFFF" opacity="0.35" />
+      </svg>
+    </motion.span>
+  );
+}
+
+/** Ursinho espiando por cima da cartinha, segurando um coração que pulsa. */
+function PeekBearHeart() {
+  return (
+    <svg width="76" height="64" viewBox="0 0 120 100" aria-hidden="true">
+      <circle cx="30" cy="30" r="16" fill="#C9A574" />
+      <circle cx="90" cy="30" r="16" fill="#C9A574" />
+      <circle cx="30" cy="30" r="8" fill="#8B6F52" />
+      <circle cx="90" cy="30" r="8" fill="#8B6F52" />
+      <circle cx="60" cy="58" r="36" fill="#C9A574" />
+      <ellipse cx="60" cy="68" rx="20" ry="15" fill="#FAF6F0" />
+      <circle cx="36" cy="66" r="6" fill="#E8B9A0" opacity="0.75" />
+      <circle cx="84" cy="66" r="6" fill="#E8B9A0" opacity="0.75" />
+      {/* Olhinhos fechados e sorridentes */}
+      <path
+        d="M42 52 q5 -6 10 0 M68 52 q5 -6 10 0"
+        fill="none"
+        stroke="#5C4433"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <ellipse cx="60" cy="63" rx="5" ry="3.8" fill="#5C4433" />
+      <path
+        d="M60 67 v4 M60 71 c-4 5 -10 5 -12 0 M60 71 c4 5 10 5 12 0"
+        fill="none"
+        stroke="#5C4433"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      {/* Coração entre as patinhas */}
+      <motion.g
+        style={{ transformBox: "fill-box", transformOrigin: "center" }}
+        animate={{ scale: [1, 1.14, 1, 1.08, 1] }}
+        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut", repeatDelay: 0.6 }}
+      >
+        <path
+          d={HEART_PATH}
+          transform="translate(44 72) scale(1.35)"
+          fill="#B08968"
+        />
+      </motion.g>
+      <ellipse cx="38" cy="92" rx="11" ry="8" fill="#C9A574" />
+      <ellipse cx="82" cy="92" rx="11" ry="8" fill="#C9A574" />
+    </svg>
   );
 }

@@ -11,6 +11,9 @@ import { Physics2DPlugin } from "gsap/Physics2DPlugin";
 import { MorphSVGPlugin } from "gsap/MorphSVGPlugin";
 import { SplitText } from "gsap/SplitText";
 import { CustomEase } from "gsap/CustomEase";
+import { CustomWiggle } from "gsap/CustomWiggle";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 
 let registered = false;
 
@@ -24,7 +27,10 @@ export function ensureGsap(): void {
     Physics2DPlugin,
     MorphSVGPlugin,
     SplitText,
-    CustomEase
+    CustomEase,
+    CustomWiggle,
+    MotionPathPlugin,
+    DrawSVGPlugin
   );
 
   // "Respiro" orgânico para a subida do papel: acelera e assenta com um leve
@@ -32,6 +38,18 @@ export function ensureGsap(): void {
   CustomEase.create("paperRise", "M0,0 C0.14,0.86 0.28,1.02 0.5,1.01 0.72,1 0.86,1 1,1");
   // Queda macia com leve chicote no fim (poeira/estilhaços que assentam).
   CustomEase.create("softDrop", "M0,0 C0.3,0 0.5,0.2 0.62,0.55 0.74,0.9 0.86,1 1,1");
+  // "Chacoalhada" de antecipação do envelope antes do selo rachar.
+  CustomWiggle.create("envWiggle", { wiggles: 6, type: "easeOut" });
 }
 
-export { gsap, useGSAP, Physics2DPlugin, MorphSVGPlugin, SplitText, CustomEase };
+export {
+  gsap,
+  useGSAP,
+  Physics2DPlugin,
+  MorphSVGPlugin,
+  SplitText,
+  CustomEase,
+  CustomWiggle,
+  MotionPathPlugin,
+  DrawSVGPlugin,
+};

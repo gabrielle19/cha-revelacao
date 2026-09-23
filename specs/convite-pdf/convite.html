@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Convite Chá Revelação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Quicksand:wght@500;600;700&display=block"
+  rel="stylesheet"
+/>
+<style>
+  /* Convite de WhatsApp: página única 1080×1350 (4:5), mesma paleta do site. */
+  :root {
+    --cream: #faf6f0;
+    --beige: #e8dcc8;
+    --beige-light: #f1e6d6;
+    --caramel: #c9a574;
+    --label: #b08968;
+    --label-deep: #8b6f52;
+    --dark: #5c4433;
+    --pink: #e8c4cb;
+    --pink-edge: #d3a2ae;
+    --blue: #c3d5e3;
+    --blue-edge: #a4bdd1;
+    --site: "https://cha-revelacao-knny.onrender.com/";
+  }
+  @page { size: 1080px 1350px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; }
+  body {
+    position: relative;
+    overflow: hidden;
+    color: var(--dark);
+    font-family: "Quicksand", sans-serif;
+    background:
+      radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%),
+      radial-gradient(ellipse 60% 40% at 50% 62%, rgba(240, 214, 160, 0.28), rgba(240, 214, 160, 0) 70%),
+      linear-gradient(180deg, #fbf7f1 0%, #f5ecdf 55%, #ecdfcb 100%);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Estampa de fundo bem discreta ── */
+  .pattern { position: absolute; inset: 0; pointer-events: none; }
+  .pattern svg { position: absolute; fill: var(--caramel); opacity: 0.16; }
+
+  /* ── Moldura ── */
+  .frame {
+    position: absolute; inset: 34px;
+    border: 1.5px solid rgba(176, 137, 104, 0.55);
+    border-radius: 26px;
+  }
+  .frame::after {
+    content: ""; position: absolute; inset: 12px;
+    border: 1px dashed rgba(176, 137, 104, 0.35);
+    border-radius: 18px;
+  }
+  .corner { position: absolute; width: 92px; height: 92px; }
+  .corner.tl { top: 22px; left: 22px; }
+  .corner.tr { top: 22px; right: 22px; transform: scaleX(-1); }
+  .corner.bl { bottom: 22px; left: 22px; transform: scaleY(-1); }
+  .corner.br { bottom: 22px; right: 22px; transform: scale(-1, -1); }
+  .diamond {
+    position: absolute; width: 11px; height: 11px; background: var(--caramel);
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  /* ── Conteúdo ── */
+  .content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 104px 110px 0;
+    text-align: center;
+  }
+  .kicker {
+    display: flex; align-items: center; gap: 22px;
+    font-weight: 700; font-size: 21px; letter-spacing: 0.42em;
+    color: var(--label-deep); text-transform: uppercase;
+  }
+  .kicker .rule { width: 90px; height: 1px; background: linear-gradient(90deg, transparent, var(--label)); }
+  .kicker .rule.r { background: linear-gradient(-90deg, transparent, var(--label)); }
+  .kicker span.t { margin-right: -0.42em; }
+
+  h1 {
+    margin-top: 22px;
+    font-family: "Fraunces", serif; font-weight: 600;
+    font-size: 80px; line-height: 0.98; letter-spacing: -0.01em;
+    color: var(--dark);
+  }
+  h1 .ou {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    margin: 6px 0 4px;
+    font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
+    font-size: 46px; line-height: 1; color: var(--label);
+  }
+  h1 .ou i { display: block; width: 60px; height: 1px; background: rgba(176, 137, 104, 0.5); }
+
+  .date {
+    margin-top: 24px;
+    display: inline-flex; align-items: center; gap: 18px;
+    padding: 12px 30px;
+    border: 1.5px solid var(--beige); border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    font-weight: 600; font-size: 23px; color: var(--label-deep);
+  }
+  .date .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--caramel); }
+
+  .poem {
+    margin-top: 26px; max-width: 760px; text-wrap: balance;
+    font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
+    font-size: 29px; line-height: 1.4; color: var(--dark);
+  }
+  .poem .sep { display: flex; justify-content: center; margin: 8px 0; }
+
+  /* ── Envelope (link para o site) ── */
+  a.open { display: block; color: inherit; text-decoration: none; }
+  .scene { position: relative; width: 620px; height: 440px; margin-top: 22px; }
+  .balloon { position: absolute; width: 74px; }
+  .balloon.pink { left: -46px; top: -14px; transform: rotate(-10deg); }
+  .balloon.blue { right: -42px; top: -30px; transform: rotate(9deg); }
+  .peek { position: absolute; left: 50%; top: 0; width: 110px; margin-left: -55px; }
+  .envelope {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 360px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #dcc6a6 0%, #cfb592 100%);
+    box-shadow: 0 30px 50px -26px rgba(92, 68, 51, 0.55), 0 2px 0 rgba(255, 255, 255, 0.5) inset;
+    overflow: hidden;
+  }
+  .envelope svg.folds { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .seal { position: absolute; left: 50%; top: 200px; width: 250px; height: 250px; margin: -125px 0 0 -125px; overflow: visible; }
+
+
+  .sign {
+    position: absolute; left: 0; right: 0; bottom: 70px;
+    font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500;
+    font-size: 27px; color: var(--label-deep);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+</style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="heart" viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-8.6C1 9.4 3 5.5 6.4 5.5 9 5.5 12 8.4 12 8.4s3-2.9 5.6-2.9C21 5.5 23 9.4 21.5 12.4 19 16.4 12 21 12 21z"/></symbol>
+      <symbol id="paw" viewBox="0 0 64 64"><circle cx="20" cy="22" r="6"/><circle cx="44" cy="22" r="6"/><circle cx="12" cy="39" r="6"/><circle cx="52" cy="39" r="6"/><ellipse cx="32" cy="45" rx="14" ry="11"/></symbol>
+      <symbol id="bear" viewBox="0 0 120 120"><circle cx="30" cy="34" r="18"/><circle cx="90" cy="34" r="18"/><circle cx="60" cy="66" r="40"/></symbol>
+      <symbol id="sprig" viewBox="0 0 92 92">
+        <g fill="none" stroke="#B08968" stroke-width="1.6" stroke-linecap="round">
+          <path d="M6 86 V22 Q6 6 22 6 H86" />
+          <path d="M20 72 Q36 50 60 30" />
+          <path d="M34 55 q-12 -2 -16 -12 q12 0 16 12z" fill="#E0CBAB" />
+          <path d="M44 44 q2 -12 12 -16 q0 12 -12 16z" fill="#E0CBAB" />
+          <path d="M50 38 q-12 -3 -15 -13 q12 1 15 13z" fill="#E0CBAB" />
+        </g>
+        <circle cx="60" cy="30" r="3" fill="#C9A574" />
+        <circle cx="86" cy="6" r="3" fill="#C9A574" />
+        <circle cx="6" cy="86" r="3" fill="#C9A574" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Estampa discreta (ursinhos, patinhas, corações) -->
+  <div class="pattern" id="pattern"></div>
+
+  <!-- Moldura -->
+  <div class="frame"></div>
+  <svg class="corner tl"><use href="#sprig" /></svg>
+  <svg class="corner tr"><use href="#sprig" /></svg>
+  <svg class="corner bl"><use href="#sprig" /></svg>
+  <svg class="corner br"><use href="#sprig" /></svg>
+  <span class="diamond" style="left:540px;top:35px"></span>
+  <span class="diamond" style="left:540px;top:1315px"></span>
+  <span class="diamond" style="left:35px;top:675px"></span>
+  <span class="diamond" style="left:1045px;top:675px"></span>
+
+  <main class="content">
+    <div class="kicker"><span class="rule"></span><span class="t">Chá Revelação</span><span class="rule r"></span></div>
+
+    <h1>
+      Bernardo
+      <span class="ou"><i></i>ou<i></i></span>
+      Maria Júlia?
+    </h1>
+
+    <div class="date">21 de novembro de 2026 <span class="dot"></span> 13h</div>
+
+    <div class="poem">
+      <p>Um amor impossível de medir, uma espera cheia de sonhos e uma surpresa que ninguém conhece ainda…</p>
+      <div class="sep"><svg width="22" height="22" fill="#B08968"><use href="#heart" /></svg></div>
+      <p>Chegou a hora de descobrirmos juntos o segredo que o nosso pequeno coração guarda.</p>
+    </div>
+
+    <a class="open" href="https://cha-revelacao-knny.onrender.com/">
+      <div class="scene">
+        <svg class="balloon pink" viewBox="0 0 44 110"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#E8C4CB"/><path d="M22 51 L18 57 L26 57 Z" fill="#D3A2AE"/><path d="M22 57 q6 12 0 24 q-6 12 2 29" fill="none" stroke="#D3A2AE" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".4"/></svg>
+        <svg class="balloon blue" viewBox="0 0 44 110"><path d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z" fill="#C3D5E3"/><path d="M22 51 L18 57 L26 57 Z" fill="#A4BDD1"/><path d="M22 57 q-6 12 0 24 q6 12 -2 29" fill="none" stroke="#A4BDD1" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><ellipse cx="15" cy="17" rx="4" ry="7" fill="#fff" opacity=".4"/></svg>
+
+        <!-- Ursinho espiando por cima do envelope -->
+        <svg class="peek" viewBox="0 0 120 100">
+          <circle cx="30" cy="30" r="16" fill="#C9A574"/><circle cx="90" cy="30" r="16" fill="#C9A574"/>
+          <circle cx="30" cy="30" r="8" fill="#8B6F52"/><circle cx="90" cy="30" r="8" fill="#8B6F52"/>
+          <circle cx="60" cy="60" r="36" fill="#C9A574"/>
+          <ellipse cx="60" cy="70" rx="20" ry="15" fill="#FAF6F0"/>
+          <circle cx="36" cy="68" r="6" fill="#E8B9A0" opacity=".75"/><circle cx="84" cy="68" r="6" fill="#E8B9A0" opacity=".75"/>
+          <circle cx="48" cy="54" r="4.4" fill="#5C4433"/><circle cx="72" cy="54" r="4.4" fill="#5C4433"/>
+          <circle cx="49.4" cy="52.6" r="1.4" fill="#fff"/><circle cx="73.4" cy="52.6" r="1.4" fill="#fff"/>
+          <ellipse cx="60" cy="65" rx="5" ry="3.8" fill="#5C4433"/>
+          <path d="M60 69 v4 M60 73 c-4 5 -10 5 -12 0 M60 73 c4 5 10 5 12 0" fill="none" stroke="#5C4433" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+
+        <div class="envelope">
+          <svg class="folds" viewBox="0 0 600 356" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="flap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4D0B1"/><stop offset="1" stop-color="#D6BC96"/></linearGradient>
+              <linearGradient id="pocket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9C19E"/><stop offset="1" stop-color="#CBB08A"/></linearGradient>
+            </defs>
+            <!-- bolso: abas laterais e inferior -->
+            <path d="M0 0 L300 196 L600 0 V356 H0 Z" fill="url(#pocket)"/>
+            <path d="M0 356 L262 176 M600 356 L338 176" stroke="#A88B66" stroke-opacity=".35" stroke-width="1.5" fill="none"/>
+            <!-- aba superior com leve sombra -->
+            <path d="M0 0 H600 L300 200 Z" fill="rgba(92,68,51,.12)" transform="translate(0 6)"/>
+            <path d="M0 0 H600 L300 200 Z" fill="url(#flap)"/>
+            <path d="M0 0 L300 200 L600 0" stroke="#A88B66" stroke-opacity=".4" stroke-width="1.5" fill="none"/>
+          </svg>
+
+          <!-- Selo de cera com texto circular -->
+          <svg class="seal" viewBox="0 0 208 208">
+            <defs>
+              <radialGradient id="wax" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#E2C48F"/><stop offset=".55" stop-color="#C9A06A"/><stop offset="1" stop-color="#8A6440"/></radialGradient>
+              <path id="ring" d="M33 104 A71 71 0 0 0 175 104" />
+              <filter id="txtShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="#4A3421" flood-opacity=".75"/></filter>
+            </defs>
+            <!-- Halo de "toque aqui" ao redor do selo -->
+            <circle cx="104" cy="104" r="112" fill="none" stroke="#FFF8EC" stroke-width="2" opacity=".55"/>
+            <circle cx="104" cy="104" r="124" fill="none" stroke="#FFF8EC" stroke-width="1.5" stroke-dasharray="2 7" stroke-linecap="round" opacity=".6"/>
+            <path id="blob" fill="url(#wax)" style="filter: drop-shadow(0 6px 8px rgba(74,52,33,.35))" />
+            <circle cx="104" cy="104" r="48" fill="none" stroke="#8A6440" stroke-width="2" opacity=".55"/>
+            <circle cx="104" cy="104" r="40" fill="#8B6F52"/>
+            <circle cx="104" cy="104" r="40" fill="none" stroke="#FAF6F0" stroke-width="1.6" stroke-dasharray="3 4" opacity=".7"/>
+            <g transform="translate(80 78) scale(0.4)">
+              <circle cx="30" cy="34" r="18" fill="#C9A574"/><circle cx="90" cy="34" r="18" fill="#C9A574"/>
+              <circle cx="30" cy="34" r="9" fill="#8B6F52"/><circle cx="90" cy="34" r="9" fill="#8B6F52"/>
+              <circle cx="60" cy="66" r="40" fill="#C9A574"/>
+              <ellipse cx="60" cy="78" rx="24" ry="19" fill="#FAF6F0"/>
+              <circle cx="47" cy="60" r="5" fill="#5C4433"/><circle cx="73" cy="60" r="5" fill="#5C4433"/>
+              <ellipse cx="60" cy="72" rx="6" ry="4.5" fill="#5C4433"/>
+              <path d="M60 76 v6 M60 82 c-5 6 -13 6 -16 0 M60 82 c5 6 13 6 16 0" fill="none" stroke="#5C4433" stroke-width="2.4" stroke-linecap="round"/>
+            </g>
+            <text font-family="Quicksand" font-weight="700" font-size="16.5" letter-spacing="3" fill="#FFFDF8" filter="url(#txtShadow)">
+              <textPath href="#ring" startOffset="50%" text-anchor="middle">TOQUE PARA ABRIR</textPath>
+            </text>
+          </svg>
+        </div>
+      </div>
+
+    </a>
+  </main>
+
+  <div class="sign">
+    com amor, mamãe e papai
+    <svg width="20" height="20" fill="#B08968"><use href="#heart" /></svg>
+  </div>
+
+<script>
+  // Borda orgânica do selo de cera (ondulada, levemente irregular).
+  (function () {
+    const cx = 104, cy = 104, n = 22, pts = [];
+    for (let i = 0; i < n * 2; i++) {
+      const a = (Math.PI * 2 * i) / (n * 2);
+      const r = (i % 2 ? 94 : 99) + Math.sin(i * 1.7) * 1.6;
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    let d = "M" + pts[0].join(" ");
+    for (let i = 1; i <= pts.length; i++) {
+      const p = pts[i % pts.length], q = pts[(i - 1) % pts.length];
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      d += ` Q${q[0].toFixed(1)} ${q[1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+    }
+    document.getElementById("blob").setAttribute("d", d + "Z");
+  })();
+
+  // Estampa determinística espalhada pelas laterais (longe do texto).
+  (function () {
+    let s = 20261121;
+    const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const box = document.getElementById("pattern");
+    const shapes = ["bear", "paw", "heart"];
+    const spots = [
+      [120, 150], [950, 170], [90, 420], [985, 460], [140, 700], [960, 760],
+      [80, 980], [1000, 1010], [170, 1200], [900, 1210], [300, 1265], [770, 1270],
+      [230, 300], [860, 330], [60, 850], [1020, 880],
+    ];
+    spots.forEach(([x, y], i) => {
+      const size = 34 + rnd() * 30;
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      el.setAttribute("width", size); el.setAttribute("height", size);
+      el.style.left = x - size / 2 + "px"; el.style.top = y - size / 2 + "px";
+      el.style.transform = `rotate(${(rnd() - 0.5) * 40}deg)`;
+      el.innerHTML = `<use href="#${shapes[i % 3]}" />`;
+      box.appendChild(el);
+    });
+  })();
+</script>
+</body>
+</html>
