@@ -37,10 +37,6 @@ export const rsvpSchema = z.object({
 
 export type RsvpInput = z.infer<typeof rsvpSchema>;
 
-export const giftSchema = z.object({
-  visitor_id: z.string().uuid("visitor_id inválido."),
-});
-
 export const messageSchema = z.object({
   author_name: z
     .string()

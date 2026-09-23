@@ -6,7 +6,9 @@ import { Loader2, Minus, Plus } from "lucide-react";
 import Modal from "@/components/Modal";
 import BearHead from "@/components/BearHead";
 import { rsvpSchema } from "@/lib/validation";
-import { getVisitorId, getStoredGift } from "@/lib/visitor";
+import { getVisitorId, getStoredGift, setStoredGift } from "@/lib/visitor";
+import { supabase } from "@/lib/supabase-browser";
+import { isThrottled } from "@/lib/throttle";
 import type { GiftSize } from "@/lib/event";
 
 function maskPhone(value: string): string {
@@ -66,20 +68,53 @@ export default function ConfirmarModal({
       return;
     }
 
+    // Honeypot: se veio conteúdo, finge sucesso sem gravar.
+    if (parsed.data.company && parsed.data.company.length > 0) {
+      setResultGift(storedGift ?? null);
+      setState("success");
+      return;
+    }
+
+    // Evita duplo clique (limite por aba, sem servidor).
+    if (isThrottled("rsvp")) {
+      setFormError("Aguarde alguns segundos antes de tentar de novo.");
+      return;
+    }
+
     setState("loading");
     try {
-      const res = await fetch("/api/rsvp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      const phoneDigits = parsed.data.phone.replace(/\D/g, "");
+      let giftSize: GiftSize | null = parsed.data.gift_size ?? null;
+
+      // Se ainda não há sugestão e temos visitor_id, sorteia agora (RPC atômico).
+      if (!giftSize && parsed.data.visitor_id) {
+        const { data: gift, error: giftErr } = await supabase.rpc("assign_gift", {
+          p_visitor: parsed.data.visitor_id,
+        });
+        if (!giftErr && gift) giftSize = gift as GiftSize;
+      }
+
+      // upsert por telefone (não duplica se confirmar de novo).
+      const { error } = await supabase.from("rsvps").upsert(
+        {
+          names: parsed.data.names,
+          phone: phoneDigits,
+          guests_count: parsed.data.guests_count,
+          gift_size: giftSize,
+          visitor_id: parsed.data.visitor_id ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "phone" }
+      );
+
+      if (error) {
         setState("form");
-        setFormError(data?.error || "Não foi possível confirmar. Tente novamente.");
+        setFormError("Não foi possível confirmar. Tente novamente.");
         return;
       }
-      setResultGift((data?.gift_size as GiftSize) ?? storedGift ?? null);
+
+      if (giftSize) setStoredGift(giftSize);
+      setResultGift(giftSize ?? storedGift ?? null);
       setState("success");
     } catch {
       setState("form");

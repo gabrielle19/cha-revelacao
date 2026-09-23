@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Download,
-  LogOut,
+  Loader2,
   Mail,
   MessageCircle,
   Printer,
+  RefreshCw,
   Search,
-  Trash2,
   Users,
 } from "lucide-react";
-import type { AdminData, Message } from "@/lib/admin-data";
+import { fetchAdminData, type AdminData, type Message } from "@/lib/admin-data";
 import { phoneToWhatsApp } from "@/lib/validation";
 
 function formatPhone(digits: string): string {
@@ -32,38 +31,81 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function AdminDashboard({ data }: { data: AdminData }) {
-  const router = useRouter();
+/** Escapa um valor para CSV (aspas + campos com vírgula/quebra de linha). */
+function csvCell(value: string | number): string {
+  const s = String(value ?? "");
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]): void {
+  const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+  // BOM para o Excel abrir com acentos corretos.
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export default function AdminDashboard() {
+  const [data, setData] = useState<AdminData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await fetchAdminData());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
+    if (!data) return [];
     const q = query.trim().toLowerCase();
     if (!q) return data.rsvps;
     return data.rsvps.filter((r) => r.names.toLowerCase().includes(q));
-  }, [query, data.rsvps]);
+  }, [query, data]);
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.refresh();
-    window.location.href = "/admin";
+  function exportRsvps() {
+    if (!data) return;
+    const rows: (string | number)[][] = [
+      ["Nomes", "Telefone", "Pessoas", "Fralda", "Confirmado em"],
+      ...data.rsvps.map((r) => [
+        r.names,
+        formatPhone(r.phone),
+        r.guests_count,
+        r.gift_size ?? "",
+        formatDate(r.created_at),
+      ]),
+    ];
+    downloadCsv("confirmacoes.csv", rows);
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Excluir esta confirmação? Esta ação não pode ser desfeita.")) {
-      return;
-    }
-    setDeleting(id);
-    try {
-      const res = await fetch(`/api/admin/rsvps/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        router.refresh();
-      } else {
-        window.alert("Não foi possível excluir.");
-      }
-    } finally {
-      setDeleting(null);
-    }
+  if (loading) {
+    return (
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-content flex-col items-center justify-center gap-3 px-5 py-10 text-center">
+        <Loader2 size={28} className="animate-spin text-caramel" />
+        <p className="font-body text-brownlabel">Carregando confirmações…</p>
+      </main>
+    );
+  }
+
+  if (error || !data) {
+    return <SetupNeeded message={error ?? "Erro desconhecido."} onRetry={load} />;
   }
 
   return (
@@ -71,16 +113,14 @@ export default function AdminDashboard({ data }: { data: AdminData }) {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl text-browndark">Confirmações</h1>
-          <p className="font-body text-sm text-brownlabel">
-            Chá revelação
-          </p>
+          <p className="font-body text-sm text-brownlabel">Chá revelação</p>
         </div>
         <div className="flex gap-2">
-          <a href="/api/admin/export" className="btn-secondary">
+          <button type="button" onClick={exportRsvps} className="btn-secondary">
             <Download size={18} strokeWidth={2.2} /> Exportar CSV
-          </a>
-          <button type="button" onClick={handleLogout} className="btn-secondary">
-            <LogOut size={18} strokeWidth={2.2} /> Sair
+          </button>
+          <button type="button" onClick={() => void load()} className="btn-secondary">
+            <RefreshCw size={18} strokeWidth={2.2} /> Atualizar
           </button>
         </div>
       </header>
@@ -131,7 +171,6 @@ export default function AdminDashboard({ data }: { data: AdminData }) {
                   <th className="px-4 py-3 text-center">Qtd.</th>
                   <th className="px-4 py-3 text-center">Fralda</th>
                   <th className="px-4 py-3">Confirmado</th>
-                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -158,17 +197,6 @@ export default function AdminDashboard({ data }: { data: AdminData }) {
                     <td className="px-4 py-3 text-brownlabel">
                       {formatDate(r.created_at)}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(r.id)}
-                        disabled={deleting === r.id}
-                        aria-label="Excluir confirmação"
-                        className="rounded-full p-2 text-red-700 transition-transform active:scale-90"
-                      >
-                        <Trash2 size={16} strokeWidth={2.2} />
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -179,20 +207,7 @@ export default function AdminDashboard({ data }: { data: AdminData }) {
           <div className="space-y-3 sm:hidden">
             {filtered.map((r) => (
               <div key={r.id} className="card px-4 py-4">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-body font-semibold text-browndark">
-                    {r.names}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(r.id)}
-                    disabled={deleting === r.id}
-                    aria-label="Excluir confirmação"
-                    className="rounded-full p-1.5 text-red-700"
-                  >
-                    <Trash2 size={16} strokeWidth={2.2} />
-                  </button>
-                </div>
+                <p className="font-body font-semibold text-browndark">{r.names}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-body text-sm text-brownlabel">
                   <a
                     href={`https://wa.me/${phoneToWhatsApp(r.phone)}`}
@@ -221,9 +236,7 @@ export default function AdminDashboard({ data }: { data: AdminData }) {
 }
 
 function MessagesSection({ messages }: { messages: Message[] }) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [deleting, setDeleting] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -231,18 +244,12 @@ function MessagesSection({ messages }: { messages: Message[] }) {
     return messages.filter((m) => m.author_name.toLowerCase().includes(q));
   }, [query, messages]);
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Excluir este recadinho? Esta ação não pode ser desfeita.")) {
-      return;
-    }
-    setDeleting(id);
-    try {
-      const res = await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
-      if (res.ok) router.refresh();
-      else window.alert("Não foi possível excluir.");
-    } finally {
-      setDeleting(null);
-    }
+  function exportMessages() {
+    const rows: (string | number)[][] = [
+      ["Nome", "Recadinho", "Data"],
+      ...messages.map((m) => [m.author_name, m.message, formatDate(m.created_at)]),
+    ];
+    downloadCsv("recadinhos.csv", rows);
   }
 
   return (
@@ -258,9 +265,9 @@ function MessagesSection({ messages }: { messages: Message[] }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href="/api/admin/messages/export" className="btn-secondary">
+          <button type="button" onClick={exportMessages} className="btn-secondary">
             <Download size={18} strokeWidth={2.2} /> Exportar CSV
-          </a>
+          </button>
           <a href="/admin/recados/imprimir" className="btn-secondary">
             <Printer size={18} strokeWidth={2.2} /> Versão para imprimir
           </a>
@@ -289,20 +296,7 @@ function MessagesSection({ messages }: { messages: Message[] }) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {filtered.map((m) => (
             <div key={m.id} className="card px-4 py-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-display text-lg text-caramel">
-                  {m.author_name}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(m.id)}
-                  disabled={deleting === m.id}
-                  aria-label="Excluir recadinho"
-                  className="rounded-full p-1.5 text-red-700 transition-transform active:scale-90"
-                >
-                  <Trash2 size={16} strokeWidth={2.2} />
-                </button>
-              </div>
+              <p className="font-display text-lg text-caramel">{m.author_name}</p>
               <p className="mt-1 font-body italic leading-relaxed text-browndark">
                 &ldquo;{m.message}&rdquo;
               </p>
@@ -334,5 +328,58 @@ function SummaryCard({
       </div>
       <p className="mt-1 font-display text-2xl text-browndark">{value}</p>
     </div>
+  );
+}
+
+function SetupNeeded({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  const missingTable = /Could not find the table|does not exist|PGRST205/i.test(
+    message
+  );
+  return (
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-content flex-col items-center justify-center gap-4 px-5 py-10 text-center">
+      <div className="card w-full px-6 py-6">
+        <h1 className="font-display text-2xl text-browndark">
+          Não foi possível carregar
+        </h1>
+        {missingTable ? (
+          <div className="mt-3 space-y-2 font-body text-sm text-brownlabel-deep">
+            <p>
+              As tabelas do Supabase ainda não existem. No painel do Supabase,
+              abra o <strong>SQL Editor</strong> e execute, nesta ordem:
+            </p>
+            <ol className="mx-auto max-w-sm list-decimal space-y-1 pl-5 text-left">
+              <li>
+                <code>supabase/migrations/0001_init.sql</code>
+              </li>
+              <li>
+                <code>supabase/migrations/0002_messages.sql</code>
+              </li>
+              <li>
+                <code>supabase/migrations/0003_public_rls.sql</code>
+              </li>
+            </ol>
+            <p>Depois recarregue esta página.</p>
+          </div>
+        ) : (
+          <p className="mt-3 font-body text-sm text-brownlabel-deep">
+            Verifique as variáveis <code>NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
+            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> e as regras (RLS) de leitura
+            pública.
+          </p>
+        )}
+        <p className="mt-4 break-words font-body text-xs text-brownlabel/70">
+          {message}
+        </p>
+        <button type="button" onClick={onRetry} className="btn-pill mt-4">
+          Tentar de novo
+        </button>
+      </div>
+    </main>
   );
 }

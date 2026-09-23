@@ -6,6 +6,7 @@ import { Gift, Sparkles } from "lucide-react";
 import Modal from "@/components/Modal";
 import ScratchCard from "@/components/ScratchCard";
 import { type GiftSize } from "@/lib/event";
+import { supabase } from "@/lib/supabase-browser";
 import {
   getVisitorId,
   getStoredGift,
@@ -66,15 +67,13 @@ export default function PresenteModal({
   }
 
   async function fetchGift(visitorId: string): Promise<GiftSize | null> {
+    if (!visitorId) return null;
     try {
-      const res = await fetch("/api/gift", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visitor_id: visitorId }),
+      const { data, error } = await supabase.rpc("assign_gift", {
+        p_visitor: visitorId,
       });
-      if (!res.ok) return null;
-      const data = (await res.json()) as { size?: GiftSize };
-      return data.size ?? null;
+      if (error) return null;
+      return (data as GiftSize) ?? null;
     } catch {
       return null;
     }

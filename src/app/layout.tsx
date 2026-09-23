@@ -30,12 +30,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: siteUrl,
+    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Chá Revelação — Bernardo ou Maria Júlia?",
     description:
       "Um amor que já é impossível de medir. Vem descobrir com a gente!",
+    images: ["/og-image.png"],
   },
 };
 

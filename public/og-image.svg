@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.55" y2="1">
+      <stop offset="0%" stop-color="#FBF7F1" />
+      <stop offset="45%" stop-color="#F1E6D6" />
+      <stop offset="100%" stop-color="#E3CFB4" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Selo CHÁ REVELAÇÃO -->
+  <rect x="418" y="70" width="364" height="64" rx="32" fill="#E8DCC8" />
+  <text x="600" y="112" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="30" font-weight="700" letter-spacing="8" fill="#8B6F52">CHÁ REVELAÇÃO</text>
+
+  <!-- Ursinho -->
+  <g transform="translate(600,255) scale(1.55)">
+    <g transform="translate(-60,-60)">
+      <circle cx="30" cy="34" r="18" fill="#C9A574" />
+      <circle cx="90" cy="34" r="18" fill="#C9A574" />
+      <circle cx="30" cy="34" r="9" fill="#8B6F52" />
+      <circle cx="90" cy="34" r="9" fill="#8B6F52" />
+      <circle cx="60" cy="66" r="40" fill="#C9A574" />
+      <ellipse cx="60" cy="78" rx="24" ry="19" fill="#FAF6F0" />
+      <circle cx="47" cy="60" r="5" fill="#5C4433" />
+      <circle cx="73" cy="60" r="5" fill="#5C4433" />
+      <ellipse cx="60" cy="72" rx="6" ry="4.5" fill="#5C4433" />
+    </g>
+  </g>
+
+  <!-- Nomes -->
+  <text x="600" y="440" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="72" font-weight="700" fill="#5C4433">Bernardo</text>
+  <text x="600" y="492" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="34" font-style="italic" fill="#B08968">ou</text>
+  <text x="600" y="556" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="72" font-weight="700" fill="#5C4433">Maria Júlia?</text>
+
+  <!-- Data -->
+  <text x="600" y="608" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="30" fill="#8B6F52">21 de novembro de 2026 · 13h</text>
+</svg>

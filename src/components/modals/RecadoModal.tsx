@@ -6,6 +6,8 @@ import Modal from "@/components/Modal";
 import BearHead from "@/components/BearHead";
 import { messageSchema } from "@/lib/validation";
 import { getVisitorId } from "@/lib/visitor";
+import { supabase } from "@/lib/supabase-browser";
+import { isThrottled } from "@/lib/throttle";
 
 type Phase = "form" | "sending" | "done";
 
@@ -53,18 +55,27 @@ export default function RecadoModal({
       return;
     }
 
+    // Honeypot: se veio conteúdo, finge sucesso sem gravar.
+    if (parsed.data.company && parsed.data.company.length > 0) {
+      setPhase("done");
+      return;
+    }
+
+    // Evita duplo clique (limite por aba, sem servidor).
+    if (isThrottled("messages")) {
+      setError("Aguarde alguns segundos antes de enviar de novo.");
+      return;
+    }
+
     setPhase("sending");
     try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+      const { error: insertError } = await supabase.from("messages").insert({
+        author_name: parsed.data.author_name,
+        message: parsed.data.message,
+        visitor_id: parsed.data.visitor_id ?? null,
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        setError(data?.error ?? "Não foi possível enviar. Tente novamente.");
+      if (insertError) {
+        setError("Não foi possível enviar. Tente novamente.");
         setPhase("form");
         return;
       }

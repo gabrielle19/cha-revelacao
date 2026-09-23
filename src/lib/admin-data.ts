@@ -1,4 +1,4 @@
-import { getServerSupabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { GIFT_SIZES, type GiftSize } from "@/lib/event";
 
 export type Rsvp = {
@@ -27,9 +27,8 @@ export type AdminData = {
   messages: Message[];
 };
 
-export async function getAdminData(): Promise<AdminData> {
-  const supabase = getServerSupabase();
-
+/** Busca todos os dados do painel direto do Supabase, no navegador (chave pública). */
+export async function fetchAdminData(): Promise<AdminData> {
   const [rsvpRes, quotaRes, msgRes] = await Promise.all([
     supabase
       .from("rsvps")
@@ -66,8 +65,8 @@ export async function getAdminData(): Promise<AdminData> {
   };
 }
 
-export async function getMessages(): Promise<Message[]> {
-  const supabase = getServerSupabase();
+/** Busca apenas os recadinhos (usado na versão para impressão). */
+export async function fetchMessages(): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
     .select("id, author_name, message, created_at")
