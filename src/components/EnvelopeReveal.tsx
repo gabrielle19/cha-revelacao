@@ -33,6 +33,16 @@ const SEAL_R = (320 * 0.24) / 2; // ~38.4
 const CRACK_CLOSED = "M160 96 L160 100 L160 116 L160 132 L160 136";
 const CRACK_OPEN = "M160 80 L150 100 L168 116 L150 132 L162 150";
 
+// Textura de papel (ruído fractal bem sutil, aplicado com multiply).
+const PAPER_TEXTURE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.27 0 0 0 0 0.2 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`;
+// Forro interno do envelope (bolinhas caramelo + rosa), visível ao abrir.
+const LINER: React.CSSProperties = {
+  backgroundColor: "#F4EADB",
+  backgroundImage:
+    "radial-gradient(circle at 25% 25%, rgba(201,165,116,0.45) 1.4px, transparent 1.9px), radial-gradient(circle at 75% 75%, rgba(232,196,203,0.75) 1.4px, transparent 1.9px)",
+  backgroundSize: "14px 14px",
+};
+
 const CONFETTI_COLORS = ["#FAF6F0", "#E8DCC8", "#C9A574", "#B08968", "#5C4433"];
 // Somente a paleta quente do site (caramelo / marrom / bege claro).
 const AMBIENT_COLORS = ["#C9A574", "#B08968", "#D6A96A", "#E0CBAB"];
@@ -74,6 +84,7 @@ export default function EnvelopeReveal() {
   const flapRef = useRef<HTMLDivElement>(null);
   const flapFrontRef = useRef<HTMLDivElement>(null);
   const flapBackRef = useRef<HTMLDivElement>(null);
+  const flapShadowRef = useRef<HTMLDivElement>(null); // sombra da aba no bolso
   const glowRef = useRef<HTMLDivElement>(null); // brilho pulsante do selo
   const sealRef = useRef<SVGSVGElement>(null);
   const crackRef = useRef<SVGPathElement>(null);
@@ -409,6 +420,11 @@ export default function EnvelopeReveal() {
       tl.to(
         flapRef.current,
         { rotateX: 180, duration: 0.8, ease: "back.out(1.1)" },
+        "flap"
+      );
+      tl.to(
+        flapShadowRef.current,
+        { autoAlpha: 0, duration: 0.25, ease: "power1.out" },
         "flap"
       );
       tl.set(flapBackRef.current, { visibility: "visible" }, "flap+=0.4");
@@ -1376,8 +1392,10 @@ export default function EnvelopeReveal() {
           className={ENV_BOX + " rounded-[10px]"}
           style={{
             zIndex: 1,
-            background: "#EFE3D1",
-            boxShadow: "0 14px 30px -14px rgba(92,68,51,0.45)",
+            ...LINER,
+            // Sombra dupla: contato próximo + difusa, dá "peso" ao envelope.
+            boxShadow:
+              "0 22px 38px -18px rgba(92,68,51,0.55), 0 6px 12px -6px rgba(92,68,51,0.35), inset 0 0 0 1px rgba(168,139,102,0.35)",
           }}
         />
 
@@ -1399,7 +1417,7 @@ export default function EnvelopeReveal() {
           style={{
             zIndex: 3,
             clipPath: "polygon(0% 0%, 50% 55%, 100% 0%, 100% 100%, 0% 100%)",
-            background: "linear-gradient(180deg, #D8C1A0 0%, #CDB491 100%)",
+            background: "#D3BA96",
           }}
         >
           <svg
@@ -1408,15 +1426,77 @@ export default function EnvelopeReveal() {
             className="absolute inset-0 h-full w-full"
             aria-hidden="true"
           >
+            <defs>
+              <linearGradient id="env-side-l" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#CBAF88" />
+                <stop offset="1" stopColor="#D7BF9B" />
+              </linearGradient>
+              <linearGradient id="env-side-r" x1="1" y1="0" x2="0" y2="0">
+                <stop offset="0" stopColor="#CBAF88" />
+                <stop offset="1" stopColor="#D7BF9B" />
+              </linearGradient>
+              <linearGradient id="env-bottom" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stopColor="#D2B892" />
+                <stop offset="1" stopColor="#E2CDAC" />
+              </linearGradient>
+              <filter id="env-fold-shadow" x="-10%" y="-20%" width="120%" height="140%">
+                <feDropShadow dx="0" dy="-2.5" stdDeviation="2.4" floodColor="#5C4433" floodOpacity="0.28" />
+              </filter>
+            </defs>
+            {/* Abas laterais (um tom mais escuro nas bordas externas) */}
+            <polygon points={`0,0 ${TIP_X},${TIP_Y} 0,210`} fill="url(#env-side-l)" />
+            <polygon points={`320,0 ${TIP_X},${TIP_Y} 320,210`} fill="url(#env-side-r)" />
+            {/* Aba inferior por cima das laterais, projetando sombra */}
+            <polygon
+              points={`0,210 ${TIP_X},${TIP_Y + 4} 320,210`}
+              fill="url(#env-bottom)"
+              filter="url(#env-fold-shadow)"
+            />
+            {/* Filete de luz na dobra da aba inferior */}
             <path
-              d={`M0 0 L${TIP_X} ${TIP_Y} L320 0 M0 210 L${TIP_X} ${TIP_Y} L320 210`}
+              d={`M2 208 L${TIP_X} ${TIP_Y + 5} L318 208`}
+              fill="none"
+              stroke="#FFF7EA"
+              strokeOpacity="0.55"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+            {/* Vincos das abas laterais */}
+            <path
+              d={`M0 0 L${TIP_X} ${TIP_Y} L320 0`}
               fill="none"
               stroke="#A88B66"
-              strokeOpacity="0.35"
-              strokeWidth="1.5"
+              strokeOpacity="0.4"
+              strokeWidth="1.2"
               vectorEffect="non-scaling-stroke"
             />
           </svg>
+          {/* Textura de papel */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: PAPER_TEXTURE,
+              mixBlendMode: "multiply",
+              opacity: 0.35,
+            }}
+          />
+        </div>
+
+        {/* 3b · Sombra que a aba fechada projeta no bolso (some ao abrir) */}
+        <div
+          ref={flapShadowRef}
+          className={ENV_BOX}
+          style={{ zIndex: 3, filter: "blur(3px)" }}
+          aria-hidden="true"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              clipPath: "polygon(0% 0%, 100% 0%, 50% 58%)",
+              background: "rgba(92,68,51,0.3)",
+              transform: "translateY(3px)",
+            }}
+          />
         </div>
 
         {/* 4 · Aba superior (gira para cima; duas faces). */}
@@ -1435,7 +1515,7 @@ export default function EnvelopeReveal() {
             className="absolute inset-0"
             style={{
               clipPath: "polygon(0% 0%, 100% 0%, 50% 55%)",
-              background: "#E6D6BF",
+              ...LINER,
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -1447,12 +1527,57 @@ export default function EnvelopeReveal() {
             className="absolute inset-0"
             style={{
               clipPath: "polygon(0% 0%, 100% 0%, 50% 55%)",
-              background: "linear-gradient(180deg, #E0CBAB 0%, #D3B78F 100%)",
+              background:
+                "linear-gradient(180deg, #E6D3B4 0%, #D9BF99 60%, #CFB28A 100%)",
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
               transform: "translateZ(0.1px)",
             }}
-          />
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: PAPER_TEXTURE,
+                mixBlendMode: "multiply",
+                opacity: 0.35,
+              }}
+            />
+            <svg
+              viewBox="0 0 320 210"
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full"
+              aria-hidden="true"
+            >
+              {/* Filete de luz na borda superior */}
+              <path
+                d="M0 1 H320"
+                stroke="#FFF7EA"
+                strokeOpacity="0.7"
+                strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke"
+              />
+              {/* Costura pontilhada acompanhando a borda da aba */}
+              <path
+                d={`M14 7 L${TIP_X} ${TIP_Y - 13} L306 7`}
+                fill="none"
+                stroke="#A88B66"
+                strokeOpacity="0.55"
+                strokeWidth="1.2"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              {/* Marca da dobra (borda inferior da aba) */}
+              <path
+                d={`M0 0 L${TIP_X} ${TIP_Y} L320 0`}
+                fill="none"
+                stroke="#8A6A4F"
+                strokeOpacity="0.35"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
         </div>
 
         {/* 4b · Brilho pulsante atrás do selo (fase de espera) */}
