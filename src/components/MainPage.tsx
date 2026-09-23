@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { MotionConfig, motion } from "framer-motion";
 import { MapPin, Shirt, Gift, HeartHandshake, Mail } from "lucide-react";
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import BearHead from "@/components/BearHead";
 import Countdown from "@/components/Countdown";
 import DecorativeFrame from "@/components/DecorativeFrame";
@@ -21,6 +21,9 @@ type ModalKey =
   | "recado"
   | null;
 
+/** Permite à abertura do envelope disparar a revelação do hero. */
+export type MainPageHandle = { play: () => void };
+
 const container = {
   hidden: {},
   show: {
@@ -33,224 +36,235 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-export default function MainPage({
-  entrance = true,
-  titleRef,
-  revealTitle = false,
-}: {
-  entrance?: boolean;
-  /** Referência para o <h1> do título, usada pela abertura (SplitText). */
-  titleRef?: React.Ref<HTMLHeadingElement>;
-  /** Quando true, o título entra escondido para ser revelado via GSAP. */
-  revealTitle?: boolean;
-}) {
-  const [modal, setModal] = useState<ModalKey>(null);
+// Composição do título: "Bernardo" entra da esquerda, "ou" com um pequeno
+// scale, "Maria Júlia" da direita — em sequência.
+const titleGroup = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.14, delayChildren: 0.02 } },
+};
+const fromLeft = {
+  hidden: { opacity: 0, x: -30 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+};
+const ouPop = {
+  hidden: { opacity: 0, scale: 0.6 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.6, ease: [0.34, 1.56, 0.64, 1] },
+  },
+};
+const fromRight = {
+  hidden: { opacity: 0, x: 30 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+};
 
-  return (
-    <>
-      <DecorativeFrame />
-      <motion.main
-        variants={container}
-        initial={entrance ? "hidden" : "show"}
-        animate="show"
-        className="mx-auto flex min-h-[100dvh] w-full max-w-content flex-col items-center gap-6 px-5 py-10 text-center"
-      >
-        {/* Selo */}
-        <motion.div variants={item}>
-          <motion.span
-            className="chip text-xs uppercase tracking-[0.25em]"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-          >
-            {EVENT.title}
-          </motion.span>
-        </motion.div>
+const MainPage = forwardRef<MainPageHandle, { autoPlay?: boolean }>(
+  function MainPage({ autoPlay = true }, ref) {
+    const [modal, setModal] = useState<ModalKey>(null);
+    // O hero começa escondido quando a abertura controla o momento da revelação
+    // (autoPlay=false). Ela chama `play()` quando o papel assenta na tela.
+    const [playing, setPlaying] = useState(autoPlay);
+    useImperativeHandle(ref, () => ({ play: () => setPlaying(true) }), []);
 
-        {/* Ursinho flutuante */}
-        <motion.div
-          variants={item}
-          animate={{ y: [0, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+    return (
+      <MotionConfig reducedMotion="user">
+        <DecorativeFrame />
+        <motion.main
+          variants={container}
+          initial="hidden"
+          animate={playing ? "show" : "hidden"}
+          className="mx-auto flex min-h-[100dvh] w-full max-w-content flex-col items-center gap-6 px-5 py-10 text-center"
         >
-          <BearHead size={120} blush />
-        </motion.div>
-
-        {/* Título */}
-        {revealTitle ? (
-          // Entra escondido: a abertura do envelope revela letra a letra (SplitText).
-          <h1
-            ref={titleRef}
-            style={{ visibility: "hidden" }}
-            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
-          >
-            {EVENT.babyOptions.a}
-            <br />
-            <span className="font-body text-2xl italic text-brownlabel">ou</span>{" "}
-            {EVENT.babyOptions.b}?
-          </h1>
-        ) : (
-          <motion.h1
-            variants={item}
-            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
-          >
+          {/* Selo */}
+          <motion.div variants={item}>
             <motion.span
-              className="inline-block"
-              animate={{ scale: [1, 1.03, 1] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+              className="chip text-xs uppercase tracking-[0.25em]"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
             >
+              {EVENT.title}
+            </motion.span>
+          </motion.div>
+
+          {/* Ursinho flutuante — entrada (item) separada da flutuação contínua */}
+          <motion.div variants={item}>
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+            >
+              <BearHead size={120} blush />
+            </motion.div>
+          </motion.div>
+
+          {/* Título — composição: Bernardo (esq) · ou (scale) · Maria Júlia (dir) */}
+          <motion.h1
+            variants={titleGroup}
+            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
+          >
+            <motion.span variants={fromLeft} className="inline-block">
               {EVENT.babyOptions.a}
-              <br />
-              <span className="font-body text-2xl italic text-brownlabel">
-                ou
-              </span>{" "}
+            </motion.span>
+            <br />
+            <motion.span
+              variants={ouPop}
+              className="inline-block font-body text-2xl italic text-brownlabel"
+            >
+              ou
+            </motion.span>{" "}
+            <motion.span variants={fromRight} className="inline-block">
               {EVENT.babyOptions.b}?
             </motion.span>
           </motion.h1>
-        )}
 
-        {/* Data e horário */}
-        <motion.div variants={item} className="flex flex-wrap justify-center gap-3">
-          <motion.span
-            className="chip"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }}
-          >
-            {EVENT.dateLong}
-          </motion.span>
-          <motion.span
-            className="chip"
-            animate={{ y: [0, -4, 0] }}
-            transition={{
-              repeat: Infinity,
-              duration: 3.2,
-              ease: "easeInOut",
-              delay: 0.5,
-            }}
-          >
-            {EVENT.time}
-          </motion.span>
-        </motion.div>
-
-        {/* Contagem regressiva */}
-        <motion.div variants={item}>
-          <Countdown />
-        </motion.div>
-
-        {/* Versículo */}
-        <motion.div variants={item} className="w-full">
-          <motion.div
-            className="card w-full px-6 py-5"
-            animate={{ y: [0, -5, 0] }}
-            transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-          >
-            <p className="font-body italic text-brownlabel-deep">
-              &ldquo;{VERSE.text}&rdquo;
-            </p>
-            <p className="mt-2 font-body text-sm font-semibold text-caramel">
-              {VERSE.ref}
-            </p>
+          {/* Data e horário */}
+          <motion.div variants={item} className="flex flex-wrap justify-center gap-3">
+            <motion.span
+              className="chip"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }}
+            >
+              {EVENT.dateLong}
+            </motion.span>
+            <motion.span
+              className="chip"
+              animate={{ y: [0, -4, 0] }}
+              transition={{
+                repeat: Infinity,
+                duration: 3.2,
+                ease: "easeInOut",
+                delay: 0.5,
+              }}
+            >
+              {EVENT.time}
+            </motion.span>
           </motion.div>
-        </motion.div>
 
-       {/* Texto na voz do bebê */}
-<motion.p
-  variants={item}
-  className="font-body italic leading-relaxed text-browndark"
->
-  Antes mesmo de chegar, já existe muito amor esperando por mim. Ter você pertinho vai deixar esse momento ainda mais especial 🤎
-</motion.p>
+          {/* Contagem regressiva */}
+          <motion.div variants={item}>
+            <Countdown />
+          </motion.div>
 
-{/* Chamada para os detalhes */}
-<motion.p
-  variants={item}
-  className="mt-4 font-body italic text-md leading-relaxed text-brownmid"
->
-  Toque nos ícones abaixo para conferir todos os detalhes e confirmar sua presença. 🤎
-</motion.p>
+          {/* Versículo */}
+          <motion.div variants={item} className="w-full">
+            <motion.div
+              className="card w-full px-6 py-5"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+            >
+              <p className="font-body italic text-brownlabel-deep">
+                &ldquo;{VERSE.text}&rdquo;
+              </p>
+              <p className="mt-2 font-body text-sm font-semibold text-caramel">
+                {VERSE.ref}
+              </p>
+            </motion.div>
+          </motion.div>
 
-        {/* Grade de botões */}
-        <motion.div
-          variants={item}
-          className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4"
-        >
-          <ActionCard
-            index={0}
-            label="Local"
-            icon={<MapPin size={28} strokeWidth={2} />}
-            onClick={() => setModal("local")}
-          />
-          <ActionCard
-            index={1}
-            label="Traje"
-            icon={<Shirt size={28} strokeWidth={2} />}
-            onClick={() => setModal("traje")}
-          />
-          <ActionCard
-            index={2}
-            label="Presente"
-            icon={<Gift size={28} strokeWidth={2} />}
-            onClick={() => setModal("presente")}
-          />
-          <ActionCard
-            index={3}
-            label="Confirmar presença"
-            icon={<HeartHandshake size={28} strokeWidth={2} />}
-            highlight
-            onClick={() => setModal("confirmar")}
-          />
-        </motion.div>
+          {/* Texto na voz do bebê */}
+          <motion.p
+            variants={item}
+            className="font-body italic leading-relaxed text-browndark"
+          >
+            Antes mesmo de chegar, já existe muito amor esperando por mim. Ter você
+            pertinho vai deixar esse momento ainda mais especial 🤎
+          </motion.p>
 
-        {/* Mural de recadinhos */}
-        <motion.button
-          variants={item}
-          type="button"
-          onClick={() => setModal("recado")}
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 400, damping: 24 }}
-          className="flex w-full items-center gap-4 rounded-card border-2 border-beige bg-white p-4 text-left shadow-card"
-        >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-beige-light text-caramel">
-            <Mail size={26} strokeWidth={2} />
-          </span>
-          <span>
-            <span className="block font-body font-semibold text-md leading-tight text-browndark">
-              Deixe um recadinho para o bebê 💌
+          {/* Chamada para os detalhes */}
+          <motion.p
+            variants={item}
+            className="mt-4 font-body italic text-md leading-relaxed text-brownmid"
+          >
+            Toque nos ícones abaixo para conferir todos os detalhes e confirmar sua
+            presença. 🤎
+          </motion.p>
+
+          {/* Grade de botões */}
+          <motion.div
+            variants={item}
+            className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4"
+          >
+            <ActionCard
+              index={0}
+              label="Local"
+              icon={<MapPin size={28} strokeWidth={2} />}
+              onClick={() => setModal("local")}
+            />
+            <ActionCard
+              index={1}
+              label="Traje"
+              icon={<Shirt size={28} strokeWidth={2} />}
+              onClick={() => setModal("traje")}
+            />
+            <ActionCard
+              index={2}
+              label="Presente"
+              icon={<Gift size={28} strokeWidth={2} />}
+              onClick={() => setModal("presente")}
+            />
+            <ActionCard
+              index={3}
+              label="Confirmar presença"
+              icon={<HeartHandshake size={28} strokeWidth={2} />}
+              highlight
+              onClick={() => setModal("confirmar")}
+            />
+          </motion.div>
+
+          {/* Mural de recadinhos */}
+          <motion.button
+            variants={item}
+            type="button"
+            onClick={() => setModal("recado")}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 24 }}
+            className="flex w-full items-center gap-4 rounded-card border-2 border-beige bg-white p-4 text-left shadow-card"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-beige-light text-caramel">
+              <Mail size={26} strokeWidth={2} />
             </span>
-            <span className="mt-0.5 block font-body text-sm text-brownlabel">
-              Uma mensagem de carinho que vamos guardar para sempre
+            <span>
+              <span className="block font-body font-semibold text-md leading-tight text-browndark">
+                Deixe um recadinho para o bebê 💌
+              </span>
+              <span className="mt-0.5 block font-body text-sm text-brownlabel">
+                Uma mensagem de carinho que vamos guardar para sempre
+              </span>
             </span>
-          </span>
-        </motion.button>
+          </motion.button>
 
-        {/* Rodapé */}
-        <motion.footer
-          variants={item}
-          className="mt-4 font-body italic text-sm text-brownlabel"
-        >
-          Com amor, mamãe e papai 🤎
-        </motion.footer>
+          {/* Rodapé */}
+          <motion.footer
+            variants={item}
+            className="mt-4 font-body italic text-sm text-brownlabel"
+          >
+            Com amor, mamãe e papai 🤎
+          </motion.footer>
 
-        {/* Crédito */}
-        <motion.p
-          variants={item}
-          className="-mt-3 font-body text-[11px] text-brownlabel/60"
-        >
-          © {new Date().getFullYear()} larabytelab · Todos os direitos reservados
-        </motion.p>
-      </motion.main>
+          {/* Crédito */}
+          <motion.p
+            variants={item}
+            className="-mt-3 font-body text-[11px] text-brownlabel/60"
+          >
+            © {new Date().getFullYear()} larabytelab · Todos os direitos reservados
+          </motion.p>
+        </motion.main>
 
-      <LocalModal open={modal === "local"} onClose={() => setModal(null)} />
-      <TrajeModal open={modal === "traje"} onClose={() => setModal(null)} />
-      <PresenteModal open={modal === "presente"} onClose={() => setModal(null)} />
-      <ConfirmarModal
-        open={modal === "confirmar"}
-        onClose={() => setModal(null)}
-      />
-      <RecadoModal open={modal === "recado"} onClose={() => setModal(null)} />
-    </>
-  );
-}
+        <LocalModal open={modal === "local"} onClose={() => setModal(null)} />
+        <TrajeModal open={modal === "traje"} onClose={() => setModal(null)} />
+        <PresenteModal open={modal === "presente"} onClose={() => setModal(null)} />
+        <ConfirmarModal
+          open={modal === "confirmar"}
+          onClose={() => setModal(null)}
+        />
+        <RecadoModal open={modal === "recado"} onClose={() => setModal(null)} />
+      </MotionConfig>
+    );
+  }
+);
+
+export default MainPage;
 
 function ActionCard({
   label,

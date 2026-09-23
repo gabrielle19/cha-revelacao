@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap, useGSAP, SplitText, ensureGsap } from "@/lib/gsap-plugins";
+import { gsap, useGSAP, ensureGsap } from "@/lib/gsap-plugins";
 import BackgroundPattern from "@/components/BackgroundPattern";
-import MainPage from "@/components/MainPage";
+import MainPage, { type MainPageHandle } from "@/components/MainPage";
 
 /**
  * Abertura cinematográfica do convite (GSAP), suave e no tema bebê.
@@ -62,7 +62,7 @@ export default function EnvelopeReveal() {
   const dustRef = useRef<HTMLDivElement>(null); // poeira de luz + faíscas do selo
   const fxLayerRef = useRef<HTMLDivElement>(null); // flash + estilhaços (tela)
   const confettiLayerRef = useRef<HTMLDivElement>(null); // confete (tela)
-  const titleElRef = useRef<HTMLHeadingElement>(null);
+  const heroRef = useRef<MainPageHandle>(null); // dispara a revelação do hero
 
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const loopsRef = useRef<gsap.core.Animation[]>([]);
@@ -83,33 +83,6 @@ export default function EnvelopeReveal() {
       const dustCount = small ? 5 : 9;
       const ambientCount = small ? 8 : 14;
       const confettiBase = small ? 18 : 30;
-
-      const revealTitle = () => {
-        const h1 = titleElRef.current;
-        if (!h1) return;
-        gsap.set(h1, { autoAlpha: 1 });
-        if (reducedRef.current) return;
-        try {
-          const split = new SplitText(h1, { type: "words,chars" });
-          gsap.from(split.chars, {
-            yPercent: 100,
-            autoAlpha: 0,
-            filter: "blur(6px)",
-            duration: 0.5,
-            ease: "power2.out",
-            stagger: 0.045,
-            onComplete: () => {
-              try {
-                split.revert();
-              } catch {
-                /* mantém o split se o revert falhar */
-              }
-            },
-          });
-        } catch {
-          gsap.set(h1, { autoAlpha: 1 });
-        }
-      };
 
       const killLoops = () => {
         for (const t of loopsRef.current) t.kill();
@@ -149,7 +122,9 @@ export default function EnvelopeReveal() {
           borderRadius: 0,
           autoAlpha: 1,
         });
-        requestAnimationFrame(revealTitle);
+        // Papel assentou → revela o conteúdo do hero em sequência (via ref,
+        // imperativo: não re-renderiza o papel/máscara nem sobrescreve o GSAP).
+        requestAnimationFrame(() => heroRef.current?.play());
       };
 
       reducedRef.current = window.matchMedia(
@@ -797,7 +772,7 @@ export default function EnvelopeReveal() {
             style={{ visibility: "hidden" }}
           >
             <BackgroundPattern interactive />
-            <MainPage entrance={false} revealTitle titleRef={titleElRef} />
+            <MainPage ref={heroRef} autoPlay={false} />
           </div>
         </div>
 
