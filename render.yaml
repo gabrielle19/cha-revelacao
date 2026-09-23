@@ -7,6 +7,16 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: out
     autoDeploy: true
+    # NÃO use rewrite catch-all (/* -> /index.html): este é um site estático de
+    # várias páginas (um .html por rota), não uma SPA. As regras abaixo mapeiam
+    # as URLs "limpas" para os arquivos .html gerados pelo `next build`.
+    routes:
+      - type: rewrite
+        source: /admin
+        destination: /admin.html
+      - type: rewrite
+        source: /admin/recados/imprimir
+        destination: /admin/recados/imprimir.html
     envVars:
       - key: NODE_VERSION
         value: 22.13.1

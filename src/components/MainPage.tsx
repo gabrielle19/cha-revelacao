@@ -33,7 +33,17 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-export default function MainPage({ entrance = true }: { entrance?: boolean }) {
+export default function MainPage({
+  entrance = true,
+  titleRef,
+  revealTitle = false,
+}: {
+  entrance?: boolean;
+  /** Referência para o <h1> do título, usada pela abertura (SplitText). */
+  titleRef?: React.Ref<HTMLHeadingElement>;
+  /** Quando true, o título entra escondido para ser revelado via GSAP. */
+  revealTitle?: boolean;
+}) {
   const [modal, setModal] = useState<ModalKey>(null);
 
   return (
@@ -66,23 +76,37 @@ export default function MainPage({ entrance = true }: { entrance?: boolean }) {
         </motion.div>
 
         {/* Título */}
-        <motion.h1
-          variants={item}
-          className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
-        >
-          <motion.span
-            className="inline-block"
-            animate={{ scale: [1, 1.03, 1] }}
-            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+        {revealTitle ? (
+          // Entra escondido: a abertura do envelope revela letra a letra (SplitText).
+          <h1
+            ref={titleRef}
+            style={{ visibility: "hidden" }}
+            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
           >
             {EVENT.babyOptions.a}
             <br />
-            <span className="font-body text-2xl italic text-brownlabel">
-              ou
-            </span>{" "}
+            <span className="font-body text-2xl italic text-brownlabel">ou</span>{" "}
             {EVENT.babyOptions.b}?
-          </motion.span>
-        </motion.h1>
+          </h1>
+        ) : (
+          <motion.h1
+            variants={item}
+            className="font-display text-4xl leading-tight text-browndark sm:text-5xl"
+          >
+            <motion.span
+              className="inline-block"
+              animate={{ scale: [1, 1.03, 1] }}
+              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+            >
+              {EVENT.babyOptions.a}
+              <br />
+              <span className="font-body text-2xl italic text-brownlabel">
+                ou
+              </span>{" "}
+              {EVENT.babyOptions.b}?
+            </motion.span>
+          </motion.h1>
+        )}
 
         {/* Data e horário */}
         <motion.div variants={item} className="flex flex-wrap justify-center gap-3">
@@ -133,7 +157,7 @@ export default function MainPage({ entrance = true }: { entrance?: boolean }) {
   variants={item}
   className="font-body italic leading-relaxed text-browndark"
 >
-  Antes mesmo de chegar, já existe muito amor esperando por mim. Ter você pertinho para celebrar esse momento vai torná-lo ainda mais especial. 🤎
+  Antes mesmo de chegar, já existe muito amor esperando por mim. Ter você pertinho vai deixar esse momento ainda mais especial 🤎
 </motion.p>
 
 {/* Chamada para os detalhes */}
@@ -141,7 +165,7 @@ export default function MainPage({ entrance = true }: { entrance?: boolean }) {
   variants={item}
   className="mt-4 font-body italic text-md leading-relaxed text-brownmid"
 >
-  Tudo foi preparado com muito carinho para você! Toque nos ícones abaixo para conferir todos os detalhes e confirmar sua presença. 🤎
+  Toque nos ícones abaixo para conferir todos os detalhes e confirmar sua presença. 🤎
 </motion.p>
 
         {/* Grade de botões */}

@@ -16,8 +16,12 @@ export default function BackgroundPattern({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 -z-10"
-      style={{ minHeight: "100dvh" }}
+      // Altura SEMPRE do tamanho da viewport (100dvh), mesmo quando renderizado
+      // dentro de um ancestral transformado e mais alto (o "papel" da abertura).
+      // Sem isso, o gradiente se distribui na altura do conteúdo e a cor "pula"
+      // quando o papel termina de sair do envelope.
+      className="pointer-events-none fixed inset-x-0 top-0 -z-10"
+      style={{ height: "100dvh" }}
     >
       <div
         className="absolute inset-0"
