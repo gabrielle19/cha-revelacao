@@ -1,4 +1,5 @@
 import FloatingDecor from "@/components/FloatingDecor";
+import BalloonBackground from "@/components/BalloonBackground";
 
 /**
  * Estampa de fundo com ursinhos, patinhas e coraçõezinhos em SVG inline.
@@ -88,7 +89,12 @@ export default function BackgroundPattern({
         <rect width="100%" height="100%" fill="url(#cha-pattern)" />
       </svg>
 
-      {interactive && <FloatingDecor />}
+      {interactive && (
+        <>
+          <BalloonBackground />
+          <FloatingDecor />
+        </>
+      )}
     </div>
   );
 }

@@ -46,6 +46,18 @@ const CLOUD = (c: string, s: number) =>
   `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M7 17h10.2a3.4 3.4 0 0 0 .4-6.77A5 5 0 0 0 8.3 8.6 3.8 3.8 0 0 0 7 17z" fill="${c}"/></svg>`;
 const AMBIENT_SHAPES = [HEART, STAR, MOON, CLOUD];
 
+// Balões decorativos: rosa e azul bebê pastel — usados SOMENTE aqui (não mexe
+// na paleta do site). Tons suaves e sofisticados, nada 3D/neon/saturado.
+const BALLOON_PINK = { body: "#E8C4CB", edge: "#D3A2AE" };
+const BALLOON_BLUE = { body: "#C3D5E3", edge: "#A4BDD1" };
+// Mistura do "pop": maioria da própria cor + um pouco de creme + um toque da oposta.
+const POP_PINK = ["#E8C4CB", "#E8C4CB", "#EFD6DC", "#FAF6F0", "#C3D5E3"];
+const POP_BLUE = ["#C3D5E3", "#C3D5E3", "#DBE6EF", "#FAF6F0", "#E8C4CB"];
+const DOT = (c: string, s: number) =>
+  `<svg width="${s}" height="${s}" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="${c}"/></svg>`;
+const CONFETTI_CURVE = (c: string, s: number) =>
+  `<svg width="${s}" height="${s * 0.5}" viewBox="0 0 12 6"><path d="M1 5 Q6 -2 11 5" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
+
 export default function EnvelopeReveal() {
   const rootRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null); // câmera (zoom)
@@ -63,6 +75,8 @@ export default function EnvelopeReveal() {
   const fxLayerRef = useRef<HTMLDivElement>(null); // flash + estilhaços (tela)
   const confettiLayerRef = useRef<HTMLDivElement>(null); // confete (tela)
   const heroRef = useRef<MainPageHandle>(null); // dispara a revelação do hero
+  const pinkRef = useRef<HTMLDivElement>(null); // balão rosa (idle + pop)
+  const blueRef = useRef<HTMLDivElement>(null); // balão azul (idle + pop)
 
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const loopsRef = useRef<gsap.core.Animation[]>([]);
@@ -188,6 +202,7 @@ export default function EnvelopeReveal() {
       buildAmbient();
       buildDust();
       buildTwinkles();
+      buildBalloons();
 
       const tl = gsap.timeline({ delay: 0.15, onComplete: finalize });
       tlRef.current = tl;
@@ -239,6 +254,11 @@ export default function EnvelopeReveal() {
       tl.set(flapBackRef.current, { visibility: "visible" }, "flap+=0.4");
       tl.set(flapFrontRef.current, { visibility: "hidden" }, "flap+=0.4");
       tl.set(flapRef.current, { zIndex: 0 }, "flap+=0.4");
+
+      // 3b. Balões fazem um "POP" delicado conforme a aba abre (leve assimetria
+      //     de tempo entre os dois), liberando pequenos elementos pastel.
+      tl.add(() => popBalloon(pinkRef.current, POP_PINK), "flap+=0.15");
+      tl.add(() => popBalloon(blueRef.current, POP_BLUE), "flap+=0.32");
 
       // 4. Papel sobe "desenrolando" (rotateX → 0), sem tingir a cor
       tl.addLabel("rise", "flap+=0.5");
@@ -657,6 +677,148 @@ export default function EnvelopeReveal() {
         }
       }
 
+      // Idle dos balões: y/rotação mínimos, sine.inOut, cada um diferente.
+      function buildBalloons() {
+        const configs = [
+          { el: pinkRef.current, dur: 3.2, rot: 2, amp: 6, delay: 0 },
+          { el: blueRef.current, dur: 3.8, rot: -2.2, amp: 5, delay: 0.4 },
+        ];
+        for (const { el, dur, rot, amp, delay } of configs) {
+          if (!el) continue;
+          gsap.set(el, { transformOrigin: "center" });
+          const t = gsap.to(el, {
+            y: -amp,
+            rotation: rot,
+            duration: dur,
+            ease: "sine.inOut",
+            repeat: -1,
+            yoyo: true,
+            delay,
+          });
+          loopsRef.current.push(t);
+        }
+      }
+
+      // POP: squash (antecipação) → estica e some; libera elementos + micro-linhas.
+      function popBalloon(el: HTMLDivElement | null, palette: readonly string[]) {
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height * 0.4; // corpo do balão
+        gsap.killTweensOf(el); // encerra o idle deste balão
+        gsap
+          .timeline()
+          .to(el, {
+            scaleX: 0.86,
+            scaleY: 1.14,
+            duration: 0.09,
+            ease: "power1.out",
+          })
+          .to(el, {
+            scaleX: 1.12,
+            scaleY: 1.12,
+            autoAlpha: 0,
+            duration: 0.2,
+            ease: "power2.out",
+            onStart: () => {
+              spawnPopPieces(cx, cy, palette);
+              spawnImpactLines(cx, cy);
+              if ("vibrate" in navigator) navigator.vibrate?.(12);
+            },
+          });
+      }
+
+      function spawnPopPieces(
+        cx: number,
+        cy: number,
+        palette: readonly string[]
+      ) {
+        const layer = fxLayerRef.current;
+        if (!layer || doneRef.current) return; // não solta nada após finalizar/pular
+        const n = small ? 5 : 7;
+        for (let i = 0; i < n; i++) {
+          const color = palette[Math.floor(Math.random() * palette.length)];
+          const piece = makePopPiece(color);
+          Object.assign(piece.style, {
+            position: "absolute",
+            left: `${cx}px`,
+            top: `${cy}px`,
+            pointerEvents: "none",
+          } as Partial<CSSStyleDeclaration>);
+          layer.appendChild(piece);
+          gsap.set(piece, { xPercent: -50, yPercent: -50, scale: 0.2, autoAlpha: 0 });
+          // Leque radial orgânico (predominante para cima), com leve gravidade.
+          const angle = (-90 + gsap.utils.random(-95, 95)) * (Math.PI / 180);
+          const dist = gsap.utils.random(small ? 26 : 40, small ? 58 : 92);
+          gsap
+            .timeline({ onComplete: () => piece.remove() })
+            .to(piece, {
+              x: Math.cos(angle) * dist,
+              y: Math.sin(angle) * dist + gsap.utils.random(6, 18),
+              rotation: gsap.utils.random(-140, 140),
+              scale: gsap.utils.random(0.85, 1.1),
+              autoAlpha: 1,
+              duration: gsap.utils.random(0.5, 0.75),
+              ease: "power2.out",
+              delay: gsap.utils.random(0, 0.06),
+            })
+            .to(
+              piece,
+              { scale: 0.7, autoAlpha: 0, duration: 0.35, ease: "power1.in" },
+              ">-0.1"
+            );
+        }
+      }
+
+      // 2–3 micro-linhas radiais que comunicam o "estouro" (sem flash de tela).
+      function spawnImpactLines(cx: number, cy: number) {
+        const layer = fxLayerRef.current;
+        if (!layer || doneRef.current) return;
+        for (let i = 0; i < 3; i++) {
+          const line = document.createElement("div");
+          const ang = -60 + i * 60 + gsap.utils.random(-12, 12);
+          Object.assign(line.style, {
+            position: "absolute",
+            left: `${cx}px`,
+            top: `${cy}px`,
+            width: "2px",
+            height: `${gsap.utils.random(7, 11)}px`,
+            borderRadius: "2px",
+            background: "rgba(180,150,120,0.55)",
+            transformOrigin: "50% 100%",
+            pointerEvents: "none",
+          } as Partial<CSSStyleDeclaration>);
+          layer.appendChild(line);
+          gsap.set(line, { rotation: ang, scaleY: 0.3, autoAlpha: 0 });
+          gsap
+            .timeline({ onComplete: () => line.remove() })
+            .to(line, {
+              scaleY: 1,
+              autoAlpha: 0.7,
+              y: -6,
+              duration: 0.14,
+              ease: "power2.out",
+            })
+            .to(line, { autoAlpha: 0, y: -12, duration: 0.2, ease: "power1.in" });
+        }
+      }
+
+      function makePopPiece(color: string): HTMLElement {
+        const span = document.createElement("span");
+        span.style.display = "inline-block";
+        const kind = Math.floor(Math.random() * 4);
+        const size = gsap.utils.random(7, 11);
+        span.innerHTML =
+          kind === 0
+            ? HEART(color, size)
+            : kind === 1
+            ? STAR(color, size)
+            : kind === 2
+            ? DOT(color, size * 0.7)
+            : CONFETTI_CURVE(color, size);
+        return span;
+      }
+
       function fireConfetti(count: number) {
         const layer = confettiLayerRef.current;
         if (!layer) return;
@@ -752,6 +914,22 @@ export default function EnvelopeReveal() {
           style={{ zIndex: 0 }}
           aria-hidden="true"
         />
+
+        {/* 0b · Balões (rosa/azul bebê) flanqueando o envelope; farão "POP".
+            Presos à geometria do envelope (responsivo) e env-part (entram com
+            o envelope e somem no fim). Ficam atrás do bolso/aba (zIndex 1). */}
+        <div
+          className="env-part pointer-events-none absolute inset-0 m-auto w-[min(86vw,340px)] h-[calc(min(86vw,340px)*0.656)]"
+          style={{ zIndex: 1 }}
+          aria-hidden="true"
+        >
+          <div ref={pinkRef} className="absolute left-[-7%] top-[-46%] w-10 sm:w-12">
+            <BalloonSvg palette={BALLOON_PINK} />
+          </div>
+          <div ref={blueRef} className="absolute right-[-5%] top-[-58%] w-9 sm:w-11">
+            <BalloonSvg palette={BALLOON_BLUE} />
+          </div>
+        </div>
 
         {/* 1 · Fundo/interior do envelope */}
         <div
@@ -934,6 +1112,32 @@ export default function EnvelopeReveal() {
         aria-hidden="true"
       />
     </div>
+  );
+}
+
+/** Balão decorativo delicado (corpo, nó, cordão orgânico e brilho sutil). */
+function BalloonSvg({ palette }: { palette: { body: string; edge: string } }) {
+  return (
+    <svg viewBox="0 0 44 74" className="w-full" aria-hidden="true">
+      {/* Corpo */}
+      <path
+        d="M22 3 C33 3 40 12 40 25 C40 39 30 49 22 51 C14 49 4 39 4 25 C4 12 11 3 22 3 Z"
+        fill={palette.body}
+      />
+      {/* Nó */}
+      <path d="M22 51 L18 57 L26 57 Z" fill={palette.edge} />
+      {/* Cordão orgânico */}
+      <path
+        d="M22 57 q7 7 0 13 q-7 7 0 13"
+        fill="none"
+        stroke={palette.edge}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      {/* Brilho sutil */}
+      <ellipse cx="15" cy="17" rx="4" ry="7" fill="#FFFFFF" opacity="0.3" />
+    </svg>
   );
 }
 
